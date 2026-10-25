@@ -1,0 +1,68 @@
+/* المعرض الرقمي (Digital Expo) — ملف التنسيقات الرئيسي (Main Stylesheet) */
+html, body {
+      max-width: 100%;
+      width: 100%;
+      overflow-x: hidden;
+      position: relative;
+      font-family: 'Cairo', 'Inter', sans-serif;
+    }
+    html[dir="ltr"], html[dir="ltr"] body {
+      font-family: 'Inter', 'Cairo', sans-serif;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .badge-official { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-trusted { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-grey { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+    .badge-risk { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    /* Aurora Floating Blobs & Geometric Shapes */
+    @keyframes floatBlob {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(25px, -30px) scale(1.08); }
+      66% { transform: translate(-20px, 15px) scale(0.94); }
+    }
+    .aurora-blob-1 { animation: floatBlob 9s infinite ease-in-out; }
+    .aurora-blob-2 { animation: floatBlob 12s infinite ease-in-out reverse; }
+    .aurora-blob-3 { animation: floatBlob 10s infinite ease-in-out 2s; }
+
+    /* Card Tactile Lift & Glow */
+    .attraction-card {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .attraction-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(13, 148, 136, 0.12);
+    }
+
+    /* Glassmorphism Surface */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    /* Animated Pulse Glow for CTA */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+      50% { box-shadow: 0 0 22px 6px rgba(245, 158, 11, 0.28); }
+    }
+    .cta-urgent-glow {
+      animation: pulseGlow 2.5s infinite;
+    }
