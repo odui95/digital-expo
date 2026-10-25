@@ -1,0 +1,19 @@
+{
+  "name": "المعرض الرقمي | Digital Expo",
+  "short_name": "Digital Expo",
+  "description": "المعرض الرقمي: دليلك الشامل ومقارن أسعار المنتجات الرقمية من السعر الرسمي إلى أرخص طريق آمن.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
