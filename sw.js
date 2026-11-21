@@ -1,11 +1,12 @@
 // المعرض الرقمي (Digital Expo) — عامل الخدمة للتطبيق القابل للتثبيت (PWA Service Worker)
-const CACHE_NAME = 'digital-expo-pwa-v1';
+const CACHE_NAME = 'digital-expo-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './css/styles.css',
   './js/central-expo-data.js',
   './js/app.js',
+  './js/icons.js',
   './manifest.json',
   './assets/icon.svg'
 ];
