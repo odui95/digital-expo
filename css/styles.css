@@ -929,10 +929,12 @@ tbody tr:hover { background: rgba(13, 148, 136, 0.045); }
    صفقات اليوم — صف أفقي واحد متحرك تلقائياً (يمين ← يسار) + سحب بالإصبع
    Today's Deals marquee: one horizontal auto-scrolling swipeable row
    ========================================================================== */
-.deals-marquee-viewport { overflow: hidden; direction: rtl; touch-action: pan-y; cursor: grab; padding: 0.3rem 0.1rem 0.7rem; }
+/* نظام إحداثيات الشريط داخلياً LTR عمداً: هندسة الحلقة القياسية (مرساة يسار + translateX ضمن (−period, 0])
+   تعمل بصرياً يمين←يسار والبطاقات تدخل من اليمين، دون كسر إزاحات RTL في سفاري/iOS. داخل كل بطاقة يبقى RTL. */
+.deals-marquee-viewport { overflow: hidden; direction: ltr; touch-action: pan-y; cursor: grab; padding: 0.3rem 0.1rem 0.7rem; }
 .deals-marquee-viewport:active { cursor: grabbing; }
 .deals-marquee-track { display: flex; gap: 0.9rem; width: max-content; will-change: transform; user-select: none; -webkit-user-select: none; }
-.deal-mini-card { flex: 0 0 auto; width: min(58vw, 250px); background: #fff; border: 1px solid #e2e8f0; border-radius: 1.25rem; overflow: hidden; box-shadow: 0 1px 3px rgb(15 23 42 / 0.06); cursor: pointer; }
+.deal-mini-card { direction: rtl; text-align: right; flex: 0 0 auto; width: min(58vw, 250px); background: #fff; border: 1px solid #e2e8f0; border-radius: 1.25rem; overflow: hidden; box-shadow: 0 1px 3px rgb(15 23 42 / 0.06); cursor: pointer; }
 .deal-mini-body { padding: 0.85rem 0.9rem 0.95rem; display: flex; flex-direction: column; gap: 0.7rem; }
 .deal-mini-top { display: flex; align-items: center; gap: 0.6rem; }
 .deal-mini-logo { width: 2.75rem; height: 2.75rem; border-radius: 0.9rem; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden; flex-shrink: 0; padding: 0.35rem; box-sizing: border-box; }

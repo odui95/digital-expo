@@ -884,80 +884,6 @@
 
       }
 
-      // Item 2 & Item 3: Bento Showcase reads 100% of its prices dynamically from getProductCheapestSafeOffer() (Bilingual AR/EN)
-      function renderBentoShowcase() {
-        const isEn = state.lang === 'en';
-        const arrowIcon = isEn ? 'fa-arrow-right' : 'fa-arrow-left';
-        const chatOff = getProductOfficialOffer('p_chatgpt');
-        const chatSafe = getProductCheapestSafeOffer('p_chatgpt');
-        const freeOffer = getProductCheapestSafeOffer('p_free_giveaways');
-        const gpSafe = getProductCheapestSafeOffer('p_gamepass');
-        const adobeSafe = getProductCheapestSafeOffer('p_adobe');
-        const countryCfg = COUNTRIES_CONFIG[state.country] || COUNTRIES_CONFIG.US;
-        const cName = isEn ? (countryCfg.nameEn || countryCfg.name) : countryCfg.name;
-        const cPerks = isEn ? (countryCfg.perksPreviewEn || countryCfg.perksPreview) : countryCfg.perksPreview;
-
-        const tileAi = document.getElementById('bento-tile-ai');
-        const chatProd = state.products.find(p => p.id === 'p_chatgpt');
-        if (tileAi && chatOff && chatSafe) {
-          const aiPct = Math.round(((chatOff.price - chatSafe.price) / chatOff.price) * 100);
-          const chatName = chatProd ? (isEn ? (chatProd.nameEn || chatProd.name) : chatProd.name) : 'ChatGPT (OpenAI)';
-          const chatLogo = chatProd ? brandLogoHtml(chatProd.officialUrl, chatProd.icon) : '';
-          tileAi.innerHTML = `
-            <div class="absolute -right-12 -bottom-12 w-52 h-52 rounded-full bg-teal-300/30 blur-2xl pointer-events-none"></div>
-            <div class="relative z-10 flex flex-wrap items-center gap-2 mb-4">
-              <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-black px-3 py-1 rounded-full">${isEn ? `Save ${aiPct}%` : `وفّر ${aiPct}%`}</span>
-              ${chatSafe.lastUpdated ? `<span class="text-[11px] text-slate-500 font-bold"><i class="fa-regular fa-clock mx-1"></i>${isEn ? 'Price data last updated:' : 'آخر تحديث لبيانات الأسعار:'} <strong>${chatSafe.lastUpdated}</strong></span>` : ''}
-            </div>
-            <div class="relative z-10 flex items-center gap-4">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-teal-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
-                ${chatLogo}
-              </div>
-              <div class="min-w-0">
-                <h3 class="font-black text-slate-900 text-lg sm:text-xl truncate">${chatName}</h3>
-                <div class="flex flex-wrap items-end gap-x-6 gap-y-1 mt-1">
-                  <span><span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Official:' : 'الرسمي:'} </span><del class="text-rose-500 font-black">${formatPrice(chatOff.price)}</del></span>
-                  <span><span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Cheapest Safe:' : 'الأرخص الآمن:'} </span><span class="text-teal-700 font-black text-xl">${formatPrice(chatSafe.price)}</span></span>
-                </div>
-              </div>
-              <span class="ms-auto inline-flex items-center gap-2 text-xs font-black text-teal-700 shrink-0">
-                <span>${isEn ? 'Explore Full AI Route Ladder' : 'استكشف سلم طرق الذكاء الاصطناعي الكامل'}</span>
-                <i class="fa-solid ${arrowIcon}"></i>
-              </span>
-            </div>
-          `;
-        }
-
-        const tileFree = document.getElementById('bento-tile-freebies');
-        if (tileFree && freeOffer) {
-          tileFree.innerHTML = `
-            <span class="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gift text-lg text-rose-500"></i></span>
-            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Free Giveaways & Software' : 'هدايا وبرامج مجانية'}</span>
-            <span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0">${tBadge(freeOffer.store.trustBadge)}</span>
-            <i class="fa-solid ${arrowIcon} text-rose-400 shrink-0"></i>
-          `;
-        }
-
-        const tilePerks = document.getElementById('bento-tile-perks');
-        if (tilePerks) {
-          tilePerks.innerHTML = `
-            <span class="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gem text-lg text-emerald-500"></i></span>
-            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Already Included!' : 'قد يكون عندك أصلاً!'}</span>
-            <i class="fa-solid ${arrowIcon} text-emerald-500 shrink-0"></i>
-          `;
-        }
-
-        const tileGaming = document.getElementById('bento-tile-gaming');
-        if (tileGaming && gpSafe && adobeSafe) {
-          tileGaming.innerHTML = `
-            <span class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gamepad text-lg text-teal-600"></i></span>
-            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Cheapest Safe for Games & Software' : 'الأرخص الآمن للألعاب والبرامج'}</span>
-            <span class="text-xs font-bold text-emerald-600 shrink-0 hidden sm:inline"><i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? 'Personal / Official Family Account' : 'حساب شخصي / عائلي رسمي'}</span>
-            <i class="fa-solid ${arrowIcon} text-teal-500 shrink-0"></i>
-          `;
-        }
-      }
-
       function renderWings() {
         const grid = document.getElementById('wings-grid');
         if (!grid) return;
@@ -1093,16 +1019,16 @@
       function dealsMarqueeMeasure() {
         const track = document.getElementById('deals-track');
         if (!track) return;
-        const n = track.children.length;
-        if (n >= 2) {
-          dealsMarquee.period = Math.abs(track.children[n / 2].offsetLeft - track.children[0].offsetLeft);
-        }
+        // عرض المحتوى الكامل (مجموعتان متطابقتان) — scrollWidth مستقل عن اتجاه الصفحة، ونصفه = فترة مجموعة واحدة
+        const w = track.scrollWidth || track.offsetWidth || 0;
+        if (w > 0) dealsMarquee.period = w / 2;
       }
       function dealsMarqueeStep(ts) {
         const m = dealsMarquee;
         if (!m.lastTs) m.lastTs = ts;
         const dt = Math.min(80, ts - m.lastTs);
         m.lastTs = ts;
+        if (m.period <= 0) dealsMarqueeMeasure(); // معالجة ذاتية: أعد القياس إن لم يكن جاهزاً عند الإقلاع
         if (!m.dragging && performance.now() >= m.pausedUntil && m.period > 0) {
           m.offset = dealsMarqueeWrap(m.offset - dt * 0.04); // ≈ 40px بالثانية باتجاه اليسار
           dealsMarqueeApply();
@@ -1152,9 +1078,10 @@
             clearTimeout(rzT);
             rzT = setTimeout(() => { dealsMarqueeMeasure(); m.offset = dealsMarqueeWrap(m.offset); dealsMarqueeApply(); }, 150);
           });
+          window.addEventListener('load', () => { dealsMarqueeMeasure(); m.offset = dealsMarqueeWrap(m.offset); dealsMarqueeApply(); });
         }
         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!reduceMotion && m.period > 0) m.raf = requestAnimationFrame(dealsMarqueeStep);
+        if (!reduceMotion) m.raf = requestAnimationFrame(dealsMarqueeStep);
       }
 
       function openWing(wingId) {
@@ -2855,7 +2782,6 @@
       function refreshAllSurfaces() {
         applyLanguageUI();
         renderLiveTicker();
-        renderBentoShowcase();
         renderWings();
         renderCrossWingTools();
         renderTodayDeals();
@@ -3224,24 +3150,9 @@
           if (el) el.addEventListener('click', () => renderAdminCMS());
         });
 
-        // Hero & Bento Clicks
+        // Hero Clicks
         const hookActionBtn = document.getElementById('hook-action-btn');
         if (hookActionBtn) hookActionBtn.addEventListener('click', () => showView('calculator'));
-        const bentoAi = document.getElementById('bento-tile-ai');
-        if (bentoAi) bentoAi.addEventListener('click', () => openProduct('p_chatgpt'));
-        const bentoFreebies = document.getElementById('bento-tile-freebies');
-        if (bentoFreebies) bentoFreebies.addEventListener('click', () => openProduct('p_free_giveaways'));
-        const bentoPerks = document.getElementById('bento-tile-perks');
-        if (bentoPerks) {
-          bentoPerks.addEventListener('click', () => {
-            if (perksCountrySelect) perksCountrySelect.value = state.country;
-            updatePerksForm();
-            scanPerks();
-            showView('perks');
-          });
-        }
-        const bentoGaming = document.getElementById('bento-tile-gaming');
-        if (bentoGaming) bentoGaming.addEventListener('click', () => openWing('gaming_subs'));
 
         const tickerFreebiesBtn = document.getElementById('ticker-freebies-btn');
         if (tickerFreebiesBtn) tickerFreebiesBtn.addEventListener('click', () => openProduct('p_free_giveaways'));
