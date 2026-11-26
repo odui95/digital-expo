@@ -1204,7 +1204,7 @@
         showView('wing');
       }
 
-      // Wing Product Cards: Also read strictly from getProductCheapestSafeOffer() and include the full mandatory badge bundle (Items 2, 3, 5, 6, 7)
+      // Wing Products: clean tiles (logo + name + tiny cheapest-safe "from" hint) — full details live on the product page
       function renderWingProducts() {
         const grid = document.getElementById('wing-products-grid');
         if (!grid) return;
@@ -1250,70 +1250,23 @@
 
         list.forEach(prod => {
           const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
-          const pDesc = isEn ? (prod.descEn || prod.desc) : prod.desc;
           const ladder = getProductOffersLadder(prod.id);
-          const officialOffer = getProductOfficialOffer(prod.id);
+          if (!ladder.length) return;
           const safeOffer = getProductCheapestSafeOffer(prod.id);
-          if (!officialOffer || !safeOffer) return;
-
-          const minPrice = safeOffer.price;
-          const maxPrice = officialOffer.price;
-
           const theme = WING_VISUAL_THEMES[prod.wing] || WING_VISUAL_THEMES.ai;
-          const savePct = maxPrice > 0 ? Math.round(((maxPrice - minPrice) / maxPrice) * 100) : 0;
-          const barPct = maxPrice > 0 ? Math.max(12, Math.min(95, Math.round((minPrice / maxPrice) * 100))) : 50;
 
-          const card = document.createElement('div');
-          card.className = 'attraction-card bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between';
-          card.innerHTML = `
-            <div class="h-2 w-full bg-gradient-to-r ${theme.gradient}"></div>
-            <div class="p-5 space-y-3 flex-1 flex flex-col justify-between">
-              <div class="space-y-3">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
-                    ${brandLogoHtml(prod.officialUrl, prod.icon)}
-                  </div>
-                  <div class="flex flex-col items-end gap-1">
-                    ${savePct > 0 ? `<span class="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">${isEn ? `Cheapest Safe (-${savePct}%)` : `الأرخص الآمن (-${savePct}%)`}</span>` : ''}
-                    <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${prod.company}</span>
-                  </div>
-                </div>
-                <div>
-                  <h4 class="font-black text-slate-900 text-base">${pName}</h4>
-                  <p class="text-xs text-slate-500 mt-1 line-clamp-2">${pDesc}</p>
-                </div>
-                <div class="bg-teal-50/50 p-3 rounded-2xl border border-teal-200/70 text-xs space-y-1.5">
-                  <div class="flex justify-between items-baseline">
-                    <span class="text-[11px] font-bold text-slate-700">${isEn ? 'Cheapest Safe:' : 'الأرخص الآمن:'}</span>
-                    <span class="text-base font-black text-emerald-700">${formatPrice(minPrice)}</span>
-                  </div>
-                  <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full" style="width: ${barPct}%"></div>
-                  </div>
-                  <div class="flex justify-between text-[10px] text-slate-500">
-                    <span>${isEn ? 'Official:' : 'الرسمي الإقليمي:'} <del class="text-rose-500 font-bold">${formatPrice(maxPrice)}</del></span>
-                    <span class="text-teal-700 font-bold">${isEn ? `${ladder.length} routes` : `${ladder.length} طرق بالسلم`}</span>
-                  </div>
-                </div>
-
-                <!-- Mandatory Complete 5-Badge Bundle + Last Updated + Report Button -->
-                ${renderCardBadgesHtml(safeOffer, pName)}
-              </div>
-              <button type="button" class="wing-open-prod-btn mt-4 w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                <span>${isEn ? `View All Routes (${ladder.length})` : `عرض جدول كل الطرق (${ladder.length})`}</span>
-                <i class="fa-solid ${arrowIcon}"></i>
-              </button>
-            </div>
+          // Clean tile: large logo + name + tiny "from" hint (cheapest safe) — tap opens the full product page
+          const tile = document.createElement('button');
+          tile.type = 'button';
+          tile.className = 'product-tile attraction-card bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-teal-400 transition';
+          tile.setAttribute('aria-label', pName);
+          tile.innerHTML = `
+            <span class="tile-logo ${theme.iconBg}">${brandLogoHtml(prod.officialUrl, prod.icon)}</span>
+            <span class="tile-name">${pName}</span>
+            ${safeOffer ? `<span class="tile-hint">${isEn ? 'From' : 'يبدأ من'} ${formatPrice(safeOffer.price)}</span>` : ''}
           `;
-          card.querySelector('.wing-open-prod-btn').addEventListener('click', () => openProduct(prod.id));
-          const reportBtn = card.querySelector('.card-report-price-btn');
-          if (reportBtn) {
-            reportBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              openReportModal(reportBtn.getAttribute('data-prod'), reportBtn.getAttribute('data-store'));
-            });
-          }
-          grid.appendChild(card);
+          tile.addEventListener('click', () => openProduct(prod.id));
+          grid.appendChild(tile);
         });
       }
 
@@ -2516,35 +2469,28 @@
           header.innerHTML = state.lang === 'en' ? '<span><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>Popular Suggestions (Cheapest Safe Prices)</span><span>Click to compare</span>' : '<span><i class="fa-solid fa-lightbulb text-amber-500 ml-1"></i>اقتراحات شائعة (بأسعار الأرخص الآمن)</span><span>اضغط للمقارنة</span>';
           dropdown.appendChild(header);
 
+          const popularTiles = document.createElement('div');
+          popularTiles.className = 'product-tiles-grid search-tiles-grid';
           MOST_SEARCHED_PRODUCT_IDS.forEach(pid => {
             const p = state.products.find(x => x.id === pid);
             if (!p) return;
             const safeOffer = getProductCheapestSafeOffer(p.id);
-            const offOffer = getProductOfficialOffer(p.id);
-            const minPrice = safeOffer ? safeOffer.price : 0;
-            const row = document.createElement('div');
-            row.className = 'search-ac-item p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between transition';
-            row.innerHTML = `
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm overflow-hidden">
-                  ${brandLogoHtml(p.officialUrl, p.icon)}
-                </div>
-                <div>
-                  <div class="font-extrabold text-sm text-slate-900">${p.name}</div>
-                  <div class="text-[11px] text-slate-500">${p.company} • ${safeOffer ? safeOffer.store.name : ''}</div>
-                </div>
-              </div>
-              <div class="text-left">
-                <div class="text-xs font-black text-emerald-700">${state.lang === 'en' ? 'Cheapest Safe:' : 'الأرخص الآمن:'} ${formatPrice(minPrice)}</div>
-                ${offOffer ? `<div class="text-[10px] text-slate-400">${state.lang === 'en' ? 'Instead of' : 'بدلاً من'} <del class="text-rose-500">${formatPrice(offOffer.price)}</del></div>` : ''}
-              </div>
+            const tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'search-ac-item product-tile bg-white hover:bg-teal-50 border border-slate-100 rounded-2xl cursor-pointer transition';
+            tile.setAttribute('aria-label', p.name);
+            tile.innerHTML = `
+              <span class="tile-logo bg-teal-50 text-teal-700">${brandLogoHtml(p.officialUrl, p.icon)}</span>
+              <span class="tile-name">${p.name}</span>
+              ${safeOffer ? `<span class="tile-hint">${state.lang === 'en' ? 'From' : 'يبدأ من'} ${formatPrice(safeOffer.price)}</span>` : ''}
             `;
-            row.addEventListener('click', () => {
+            tile.addEventListener('click', () => {
               dropdown.classList.add('hidden');
               openProduct(p.id);
             });
-            dropdown.appendChild(row);
+            popularTiles.appendChild(tile);
           });
+          dropdown.appendChild(popularTiles);
 
           const guidesHeader = document.createElement('div');
           guidesHeader.className = 'px-4 py-2 bg-slate-100 text-[11px] font-black text-slate-600 flex items-center justify-between border-t border-slate-200';
@@ -2625,37 +2571,30 @@
               prodHead.textContent = state.lang === 'en' ? `Products & Subscriptions (${matchedProducts.length})` : `المنتجات والاشتراكات (${matchedProducts.length})`;
               dropdown.appendChild(prodHead);
             }
+            const resultTiles = document.createElement('div');
+            resultTiles.className = 'product-tiles-grid search-tiles-grid';
             matchedProducts.slice(0, 8).forEach(p => {
               const isEn = state.lang === 'en';
               const pName = isEn ? (p.nameEn || p.name) : p.name;
               const safeOffer = getProductCheapestSafeOffer(p.id);
-              const offOffer = getProductOfficialOffer(p.id);
-              const minPrice = safeOffer ? safeOffer.price : 0;
-              const row = document.createElement('div');
-              row.className = 'search-ac-item p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between gap-2 transition';
-              row.innerHTML = `
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm shrink-0 overflow-hidden">
-                    ${brandLogoHtml(p.officialUrl, p.icon)}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="font-extrabold text-sm text-slate-900 truncate">${pName}</div>
-                    <div class="text-[11px] text-slate-500 truncate">${p.company} • ${isEn ? 'via' : 'عبر'} ${safeOffer ? safeOffer.store.name : ''} (${safeOffer ? tBadge(safeOffer.store.trustBadge) : tBadge('رسمي')})</div>
-                  </div>
-                </div>
-                <div class="text-left shrink-0">
-                  <div class="text-xs font-black text-emerald-700">${isEn ? 'Cheapest Safe:' : 'الأرخص الآمن:'} ${formatPrice(minPrice)}</div>
-                  ${offOffer ? `<div class="text-[10px] text-slate-400">${isEn ? 'Official:' : 'الرسمي:'} <del class="text-rose-500">${formatPrice(offOffer.price)}</del></div>` : ''}
-                </div>
+              const tile = document.createElement('button');
+              tile.type = 'button';
+              tile.className = 'search-ac-item product-tile bg-white hover:bg-teal-50 border border-slate-100 rounded-2xl cursor-pointer transition';
+              tile.setAttribute('aria-label', pName);
+              tile.innerHTML = `
+                <span class="tile-logo bg-teal-50 text-teal-700">${brandLogoHtml(p.officialUrl, p.icon)}</span>
+                <span class="tile-name">${pName}</span>
+                ${safeOffer ? `<span class="tile-hint">${isEn ? 'From' : 'يبدأ من'} ${formatPrice(safeOffer.price)}</span>` : ''}
               `;
-              row.addEventListener('click', () => {
+              tile.addEventListener('click', () => {
                 dropdown.classList.add('hidden');
                 input.value = '';
                 clearBtn.classList.add('hidden');
                 openProduct(p.id);
               });
-              dropdown.appendChild(row);
+              resultTiles.appendChild(tile);
             });
+            dropdown.appendChild(resultTiles);
 
             if (matchedStores.length > 0) {
               const storeHead = document.createElement('div');

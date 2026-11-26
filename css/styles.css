@@ -896,3 +896,21 @@ tbody tr:hover { background: rgba(13, 148, 136, 0.045); }
 .brand-logo-wrap > img.brand-logo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 22%; padding: 2px; box-sizing: border-box; }
 /* Search autocomplete keyboard highlight */
 .search-ac-item.search-ac-active { background: #f0fdfa !important; box-shadow: inset 0 0 0 2px #14b8a6; }
+
+/* ==========================================================================
+   بلاطات المنتجات (شبكة الجناح + نتائج البحث) — شعار كبير + اسم + تلميح سعر
+   Product tiles: large logo, name, tiny "from" price hint — uniform heights
+   ========================================================================== */
+.product-tiles-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; }
+@media (min-width: 640px) { .product-tiles-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; } }
+@media (min-width: 1024px) { .product-tiles-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .product-tiles-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.product-tiles-grid .col-span-full { grid-column: 1 / -1; }
+.search-tiles-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; padding: 0.6rem; }
+@media (min-width: 1024px) { .search-tiles-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.product-tile { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; gap: 0.45rem; padding: 0.95rem 0.5rem 0.8rem; min-height: 8.4rem; width: 100%; cursor: pointer; font-family: inherit; }
+.product-tile .tile-logo { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; overflow: hidden; flex-shrink: 0; padding: 0.45rem; box-sizing: border-box; }
+.product-tile .tile-name { font-size: 0.8rem; font-weight: 800; color: #0f172a; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.product-tile .tile-hint { font-size: 0.68rem; font-weight: 800; color: #0d9488; margin-top: auto; white-space: nowrap; }
+.search-tiles-grid .product-tile { min-height: 7.1rem; padding: 0.7rem 0.35rem 0.6rem; }
+.search-tiles-grid .product-tile .tile-logo { width: 3rem; height: 3rem; border-radius: 0.85rem; font-size: 1.25rem; }
