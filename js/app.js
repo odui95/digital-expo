@@ -844,10 +844,9 @@
         }
       };
 
-      // Item 1 & Item 2: Live Ticker reads ONLY today's safe deals from the unified product ladder (Bilingual AR/EN)
+      // Region badge + perks teaser surfaces refresh (the old text ticker strip was removed from the homepage)
       function renderLiveTicker() {
         const isEn = state.lang === 'en';
-        const tickerEl = document.getElementById('live-ticker-message');
         const regionInd = document.getElementById('visitor-region-indicator');
         const heroBadge = document.getElementById('hero-detected-country-badge');
         const perksTeaserDesc = document.getElementById('perks-teaser-desc');
@@ -889,25 +888,6 @@
           perksTeaserProviders.innerHTML = tags.join('');
         }
 
-        if (!tickerEl) return;
-        const featuredIds = ['p_chatgpt', 'p_spotify', 'p_adobe', 'p_netflix', 'p_gamepass'];
-        const segments = [];
-        featuredIds.forEach(pid => {
-          const prod = state.products.find(p => p.id === pid);
-          if (!prod) return;
-          const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
-          const offOffer = getProductOfficialOffer(pid);
-          const safeOffer = getProductCheapestSafeOffer(pid);
-          if (offOffer && safeOffer) {
-            const pct = offOffer.price > 0 ? Math.round(((offOffer.price - safeOffer.price) / offOffer.price) * 100) : 0;
-            segments.push(
-              isEn
-                ? `${pName}: Cheapest Safe ${formatPrice(safeOffer.price)} instead of ${formatPrice(offOffer.price)} (${safeOffer.store.name} - Save ${pct}%)`
-                : `${pName}: الأرخص الآمن ${formatPrice(safeOffer.price)} بدلاً من ${formatPrice(offOffer.price)} (${safeOffer.store.name} - وفر ${pct}%)`
-            );
-          }
-        });
-        tickerEl.textContent = segments.join('  •  ');
       }
 
       // Item 2 & Item 3: Bento Showcase reads 100% of its prices dynamically from getProductCheapestSafeOffer() (Bilingual AR/EN)
@@ -924,38 +904,32 @@
         const cPerks = isEn ? (countryCfg.perksPreviewEn || countryCfg.perksPreview) : countryCfg.perksPreview;
 
         const tileAi = document.getElementById('bento-tile-ai');
+        const chatProd = state.products.find(p => p.id === 'p_chatgpt');
         if (tileAi && chatOff && chatSafe) {
           const aiPct = Math.round(((chatOff.price - chatSafe.price) / chatOff.price) * 100);
+          const chatName = chatProd ? (isEn ? (chatProd.nameEn || chatProd.name) : chatProd.name) : 'ChatGPT (OpenAI)';
+          const chatLogo = chatProd ? brandLogoHtml(chatProd.officialUrl, chatProd.icon) : '';
           tileAi.innerHTML = `
             <div class="absolute -right-12 -bottom-12 w-52 h-52 rounded-full bg-teal-300/30 blur-2xl pointer-events-none"></div>
-            <div class="space-y-3 z-10">
-              <div class="flex items-center justify-between">
-                <span class="bg-emerald-400 text-slate-950 text-[11px] font-black px-3 py-1 rounded-full shadow">✓ ${isEn ? 'Cheapest Safe' : 'الأرخص الآمن'} (${tBadge(chatSafe.store.trustBadge)})</span>
-                <span class="text-xs font-bold text-teal-800 bg-white border border-teal-200 px-2.5 py-1 rounded-full">${isEn ? 'AI Subscriptions Wing' : 'جناح الذكاء الاصطناعي'}</span>
-              </div>
-              <h3 class="text-2xl sm:text-3xl font-black leading-snug">
-                ${isEn
-                  ? `ChatGPT (OpenAI) for ${formatPrice(chatSafe.price)} instead of ${formatPrice(chatOff.price)}!`
-                  : `ChatGPT (OpenAI) بـ ${formatPrice(chatSafe.price)} بدلاً من ${formatPrice(chatOff.price)}!`}
-              </h3>
-              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                ${isEn
-                  ? `Cheapest safe route via <strong>${chatSafe.store.name}</strong> (${tOwnership(chatSafe.ownershipType)} • ${tContinuity(chatSafe.dataContinuity)}), or via pay-as-you-go gateways (OpenRouter & Poe).`
-                  : `أرخص طريق آمن عبر <strong>${chatSafe.store.name}</strong> (${chatSafe.ownershipType} • ${chatSafe.dataContinuity})، أو عبر بوابات الدفع حسب الاستخدام (OpenRouter وPoe).`}
-              </p>
+            <div class="relative z-10 flex flex-wrap items-center gap-2 mb-4">
+              <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-black px-3 py-1 rounded-full">${isEn ? `Save ${aiPct}%` : `وفّر ${aiPct}%`}</span>
+              ${chatSafe.lastUpdated ? `<span class="text-[11px] text-slate-500 font-bold"><i class="fa-regular fa-clock mx-1"></i>${isEn ? 'Price data last updated:' : 'آخر تحديث لبيانات الأسعار:'} <strong>${chatSafe.lastUpdated}</strong></span>` : ''}
             </div>
-            <div class="pt-6 z-10 space-y-3">
-              <div class="bg-white rounded-2xl p-3.5 border border-teal-100 shadow-sm flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <span class="text-[11px] text-slate-500 block">${isEn ? 'Verified Cheapest Safe Today:' : 'الأرخص الآمن الموثق اليوم:'}</span>
-                  <span class="text-lg font-black text-teal-700">${formatPrice(chatSafe.price)} <span class="text-xs font-normal text-slate-500">${isEn ? `/ mo (Updated: ${chatSafe.lastUpdated})` : `/ شهرياً (آخر تحديث: ${chatSafe.lastUpdated})`}</span></span>
-                </div>
-                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-xl text-xs font-black">${isEn ? `Save ${aiPct}%` : `توفير ${aiPct}%`}</span>
+            <div class="relative z-10 flex items-center gap-4">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-teal-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                ${chatLogo}
               </div>
-              <div class="inline-flex items-center gap-2 text-xs font-black text-teal-700">
+              <div class="min-w-0">
+                <h3 class="font-black text-slate-900 text-lg sm:text-xl truncate">${chatName}</h3>
+                <div class="flex flex-wrap items-end gap-x-6 gap-y-1 mt-1">
+                  <span><span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Official:' : 'الرسمي:'} </span><del class="text-rose-500 font-black">${formatPrice(chatOff.price)}</del></span>
+                  <span><span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Cheapest Safe:' : 'الأرخص الآمن:'} </span><span class="text-teal-700 font-black text-xl">${formatPrice(chatSafe.price)}</span></span>
+                </div>
+              </div>
+              <span class="ms-auto inline-flex items-center gap-2 text-xs font-black text-teal-700 shrink-0">
                 <span>${isEn ? 'Explore Full AI Route Ladder' : 'استكشف سلم طرق الذكاء الاصطناعي الكامل'}</span>
                 <i class="fa-solid ${arrowIcon}"></i>
-              </div>
+              </span>
             </div>
           `;
         }
@@ -963,61 +937,29 @@
         const tileFree = document.getElementById('bento-tile-freebies');
         if (tileFree && freeOffer) {
           tileFree.innerHTML = `
-            <div class="space-y-2 z-10">
-              <div class="flex items-center justify-between">
-                <span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Badge:' : 'شارة:'} ${tBadge(freeOffer.store.trustBadge)}</span>
-                <i class="fa-solid fa-gift text-2xl text-rose-400"></i>
-              </div>
-              <h4 class="text-lg font-black leading-tight">${isEn ? `Free Giveaways & Software (${formatPrice(0)})` : `هدايا وبرامج مجانية (${formatPrice(0)})`}</h4>
-              <p class="text-xs text-slate-600">${isEn
-                ? `Weekly Epic Games freebies + legal Giveaway of the Day licenses on your personal account (${tContinuity(freeOffer.dataContinuity)}).`
-                : `ألعاب Epic Games الأسبوعية + تراخيص Giveaway of the Day القانونية بحسابك الشخصي (${freeOffer.dataContinuity}).`}</p>
-            </div>
-            <div class="pt-4 z-10 flex items-center justify-between text-[11px] font-black border-t border-rose-200 mt-3">
-              <span>${isEn ? `Updated: ${freeOffer.lastUpdated}` : `آخر تحديث: ${freeOffer.lastUpdated}`}</span>
-              <span>${isEn ? 'View Details' : 'عرض التفاصيل'} <i class="fa-solid ${arrowIcon} mx-1"></i></span>
-            </div>
+            <span class="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gift text-lg text-rose-500"></i></span>
+            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Free Giveaways & Software' : 'هدايا وبرامج مجانية'}</span>
+            <span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0">${tBadge(freeOffer.store.trustBadge)}</span>
+            <i class="fa-solid ${arrowIcon} text-rose-400 shrink-0"></i>
           `;
         }
 
         const tilePerks = document.getElementById('bento-tile-perks');
         if (tilePerks) {
           tilePerks.innerHTML = `
-            <div class="space-y-2 z-10">
-              <div class="flex items-center justify-between">
-                <span class="bg-white text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-200">${countryCfg.flag} ${isEn ? `For ${cName}` : `مخصص لـ ${cName}`}</span>
-                <i class="fa-solid fa-gem text-2xl text-emerald-500"></i>
-              </div>
-              <h4 class="text-lg font-black leading-tight">${isEn ? 'Already Included!' : 'قد يكون عندك أصلاً!'}</h4>
-              <p class="text-xs text-slate-600 line-clamp-3">${cPerks}</p>
-            </div>
-            <div class="pt-4 z-10 flex items-center justify-between text-xs font-black border-t border-emerald-200 mt-3">
-              <span>${isEn ? 'Check Your Telecom & Bank Perks' : 'افحص باقات اتصالاتك وبنكك'}</span>
-              <i class="fa-solid fa-wand-magic-sparkles"></i>
-            </div>
+            <span class="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gem text-lg text-emerald-500"></i></span>
+            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Already Included!' : 'قد يكون عندك أصلاً!'}</span>
+            <i class="fa-solid ${arrowIcon} text-emerald-500 shrink-0"></i>
           `;
         }
 
         const tileGaming = document.getElementById('bento-tile-gaming');
         if (tileGaming && gpSafe && adobeSafe) {
           tileGaming.innerHTML = `
-            <div class="space-y-1.5">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Cheapest Safe for Games & Software' : 'الأرخص الآمن للألعاب والبرامج'}</span>
-                <span class="text-xs font-bold text-emerald-600"><i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? 'Personal / Official Family Account' : 'حساب شخصي / عائلي رسمي'}</span>
-              </div>
-              <h4 class="text-base sm:text-lg font-black">
-                ${isEn
-                  ? `Xbox Game Pass at ${formatPrice(gpSafe.price)} (${gpSafe.store.name}) • Adobe CC at ${formatPrice(adobeSafe.price)} (${adobeSafe.store.name})`
-                  : `Xbox Game Pass بـ ${formatPrice(gpSafe.price)} (${gpSafe.store.name}) • Adobe CC بـ ${formatPrice(adobeSafe.price)} (${adobeSafe.store.name})`}
-              </h4>
-              <p class="text-xs text-slate-500">${isEn
-                ? `All prices are read directly from the unified route ladder in your selected currency (${state.currency}).`
-                : `جميع الأسعار تقرأ مباشرة من سلم الطرق الموحد بعملتك المختارة (${state.currency}).`}</p>
-            </div>
-            <span class="bg-teal-600 hover:bg-teal-500 text-white font-black px-4 py-2.5 rounded-xl text-xs shrink-0 transition">
-              ${isEn ? 'Compare Routes' : 'قارن الطرق'} <i class="fa-solid ${arrowIcon} mx-1"></i>
-            </span>
+            <span class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-gamepad text-lg text-teal-600"></i></span>
+            <span class="font-black text-slate-900 text-sm sm:text-base flex-1 truncate">${isEn ? 'Cheapest Safe for Games & Software' : 'الأرخص الآمن للألعاب والبرامج'}</span>
+            <span class="text-xs font-bold text-emerald-600 shrink-0 hidden sm:inline"><i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? 'Personal / Official Family Account' : 'حساب شخصي / عائلي رسمي'}</span>
+            <i class="fa-solid ${arrowIcon} text-teal-500 shrink-0"></i>
           `;
         }
       }
@@ -3137,7 +3079,8 @@
         });
 
         // CTAs & Breadcrumbs
-        document.getElementById('cta-open-perks').addEventListener('click', () => {
+        const ctaOpenPerksBtn = document.getElementById('cta-open-perks');
+        if (ctaOpenPerksBtn) ctaOpenPerksBtn.addEventListener('click', () => {
           if (perksCountrySelect) perksCountrySelect.value = state.country;
           updatePerksForm();
           scanPerks();
