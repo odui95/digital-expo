@@ -1520,79 +1520,105 @@
           });
           tbody.appendChild(tr);
 
-          // 2. Mobile Stacked Card (Item 6: All 7 badges/fields readable in full without clipping or horizontal scroll)
+          // 2. Mobile Compact Stacked Rows — slim row per method (rank, logo, store,
+          // trust badge, total price); tap expands full details in place (accordion).
           if (mobileList) {
             const mCard = document.createElement('div');
-            mCard.className = `rounded-2xl border p-4 space-y-3 shadow-sm ${
+            mCard.className = `rounded-2xl border shadow-sm overflow-hidden ${
               isCheapestSafeRow ? 'bg-teal-50 border-teal-400 ring-1 ring-teal-500/40' : (idx === 0 ? 'bg-teal-50/50 border-teal-300 ring-1 ring-teal-500/20' : 'bg-white border-slate-200')
             }`;
             mCard.innerHTML = `
-              <!-- Field 1 & 2: Method/Source + Store Trust Badge -->
-              <div class="flex items-start justify-between gap-2 border-b border-slate-200/80 pb-2.5">
-                <div class="space-y-0.5">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    ${idx === 0 ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${isEn ? '#1 Cheapest' : '#1 الأرخص'}</span>` : `<span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>`}
-                    ${isCheapestSafeRow ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">★ ${isEn ? 'Cheapest Safe' : 'الأرخص الآمن'}</span>` : ''}
-                    <button type="button" class="m-store-link font-black text-sm text-slate-900 hover:text-teal-600 underline decoration-dotted">
-                      ${store.name}
-                    </button>
-                  </div>
-                  <div class="text-[11px] text-slate-500">${tStoreType(store.type)}</div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full font-bold text-[11px] shrink-0 ${getTrustBadgeClass(store.trustBadge)}">
-                  ${isEn ? 'Badge:' : 'الشارة:'} ${tBadge(store.trustBadge)}
+              <!-- Compact Row Header (always visible — all offers at a glance) -->
+              <button type="button" class="m-offer-toggle w-full flex items-center gap-2.5 p-3 text-start" aria-expanded="false">
+                <span class="flex flex-col items-start gap-1 shrink-0">
+                  ${idx === 0 ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${isEn ? '#1 Cheapest' : '#1 الأرخص'}</span>` : `<span class="text-[11px] font-black text-slate-400">#${idx + 1}</span>`}
+                  ${isCheapestSafeRow ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">★ ${isEn ? 'Cheapest Safe' : 'الأرخص الآمن'}</span>` : ''}
                 </span>
-              </div>
+                <span class="w-8 h-8 inline-flex shrink-0">${brandLogoHtml(store.url, 'fa-solid fa-store text-teal-600')}</span>
+                <span class="flex-1 min-w-0">
+                  <span class="block font-black text-sm text-slate-900 truncate">${store.name}</span>
+                  <span class="block text-[11px] text-slate-500 truncate">${tStoreType(store.type)}</span>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full font-bold text-[10px] ${getTrustBadgeClass(store.trustBadge)}">${isEn ? 'Badge:' : 'الشارة:'} ${tBadge(store.trustBadge)}</span>
+                </span>
+                <span class="text-end shrink-0">
+                  <span class="block text-lg font-black text-teal-700 leading-none">${formatPrice(offer.price)}</span>
+                  <span class="block text-[10px] text-slate-400 mt-1">${isEn ? `Fees incl. (${state.currency})` : `شامل الرسوم (${state.currency})`}</span>
+                </span>
+                <i class="fa-solid fa-chevron-down m-offer-chevron text-slate-400 text-xs shrink-0 transition-transform duration-300"></i>
+              </button>
 
-              <!-- Field 6: Total Real Price (Prominent on Mobile) -->
-              <div class="bg-white rounded-xl p-3 border border-slate-200/90 flex items-center justify-between gap-2">
-                <div>
-                  <span class="text-[11px] font-bold text-slate-500 block">${isEn ? 'Total Real Price:' : 'السعر الكلي الحقيقي:'}</span>
-                  <span class="text-[10px] text-slate-400">${isEn ? `Includes known fees (${state.currency})` : `شامل الرسوم (${state.currency})`}</span>
-                </div>
-                <div class="text-lg font-black text-teal-700">${formatPrice(offer.price)}</div>
-              </div>
-
-              <!-- Fields 3, 4, 5: Ownership, Data Continuity, Activation & Payment (Full Unclipped Badges) -->
-              <div class="space-y-2 text-xs bg-slate-50/90 p-3 rounded-xl border border-slate-200/80">
-                <div class="flex flex-col gap-1">
-                  <span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Ownership Type:' : 'نوع الملكية:'}</span>
-                  <span class="px-2.5 py-1 rounded-lg font-bold bg-white text-slate-800 border border-slate-200 self-start">
-                    ${tOwnership(offer.ownershipType)}
-                  </span>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Data Continuity:' : 'استمرارية البيانات:'}</span>
-                  <span class="px-2.5 py-1 rounded-lg font-bold border self-start ${continuityBadgeClass}">
-                    ${tContinuity(offer.dataContinuity)}
-                  </span>
-                </div>
-                <div class="pt-1 border-t border-slate-200/70 space-y-1 text-[11px]">
-                  <div><strong class="text-slate-700">${isEn ? 'Activation Country:' : 'بلد التفعيل:'}</strong> <span class="text-slate-800">${tRegion(offer.region)}</span></div>
-                  <div><strong class="text-slate-700">${isEn ? 'Accepted Payments:' : 'وسائل الدفع المقبولة:'}</strong> <span class="text-slate-800">${translatePaymentText(store.payments)}</span></div>
-                </div>
-              </div>
-
-              <!-- Last Updated & Report Wrong Price -->
-              <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
-                <span><i class="fa-regular fa-clock mx-1"></i>${isEn ? 'Last updated:' : 'آخر تحديث:'} <strong>${offer.lastUpdated}</strong></span>
-                <button type="button" class="m-report-btn text-rose-600 hover:text-rose-700 font-extrabold underline flex items-center gap-1">
-                  <i class="fa-solid fa-flag text-[10px]"></i> ${isEn ? 'Report wrong price' : 'بلّغ عن سعر خاطئ'}
+              <!-- Expandable Details (collapsed by default) -->
+              <div class="m-offer-panel hidden px-3 pb-3 space-y-3">
+                <!-- Store Page Link -->
+                <button type="button" class="m-store-link text-xs font-extrabold text-teal-700 hover:text-teal-800 underline decoration-dotted flex items-center gap-1">
+                  <i class="fa-solid fa-store text-[10px]"></i> ${isEn ? `Store page: ${store.name}` : `صفحة المتجر: ${store.name}`}
                 </button>
-              </div>
 
-              <!-- Field 7: Direct Store Link Button & Mandatory Affiliate Disclosure -->
-              <div class="space-y-1.5 pt-1">
-                <button type="button" class="m-outbound-btn w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 px-4 rounded-xl text-xs shadow-sm transition flex items-center justify-center gap-2">
-                  <span>${isEn ? 'Go to Store Now' : 'الذهاب للمتجر الآن'}</span>
-                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                </button>
-                <div class="text-[10px] text-slate-500 font-medium text-center leading-snug">
-                  ${disclosureText}
+                <!-- Total Real Price -->
+                <div class="bg-white rounded-xl p-3 border border-slate-200/90 flex items-center justify-between gap-2">
+                  <div>
+                    <span class="text-[11px] font-bold text-slate-500 block">${isEn ? 'Total Real Price:' : 'السعر الكلي الحقيقي:'}</span>
+                    <span class="text-[10px] text-slate-400">${isEn ? `Includes known fees (${state.currency})` : `شامل الرسوم (${state.currency})`}</span>
+                  </div>
+                  <div class="text-lg font-black text-teal-700">${formatPrice(offer.price)}</div>
+                </div>
+
+                <!-- Ownership, Data Continuity, Activation & Payment -->
+                <div class="space-y-2 text-xs bg-slate-50/90 p-3 rounded-xl border border-slate-200/80">
+                  <div class="flex flex-col gap-1">
+                    <span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Ownership Type:' : 'نوع الملكية:'}</span>
+                    <span class="px-2.5 py-1 rounded-lg font-bold bg-white text-slate-800 border border-slate-200 self-start">
+                      ${tOwnership(offer.ownershipType)}
+                    </span>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <span class="text-[11px] text-slate-500 font-bold">${isEn ? 'Data Continuity:' : 'استمرارية البيانات:'}</span>
+                    <span class="px-2.5 py-1 rounded-lg font-bold border self-start ${continuityBadgeClass}">
+                      ${tContinuity(offer.dataContinuity)}
+                    </span>
+                  </div>
+                  <div class="pt-1 border-t border-slate-200/70 space-y-1 text-[11px]">
+                    <div><strong class="text-slate-700">${isEn ? 'Activation Country:' : 'بلد التفعيل:'}</strong> <span class="text-slate-800">${tRegion(offer.region)}</span></div>
+                    <div><strong class="text-slate-700">${isEn ? 'Accepted Payments:' : 'وسائل الدفع المقبولة:'}</strong> <span class="text-slate-800">${translatePaymentText(store.payments)}</span></div>
+                  </div>
+                </div>
+
+                <!-- Last Updated & Report Wrong Price -->
+                <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                  <span><i class="fa-regular fa-clock mx-1"></i>${isEn ? 'Last updated:' : 'آخر تحديث:'} <strong>${offer.lastUpdated}</strong></span>
+                  <button type="button" class="m-report-btn text-rose-600 hover:text-rose-700 font-extrabold underline flex items-center gap-1">
+                    <i class="fa-solid fa-flag text-[10px]"></i> ${isEn ? 'Report wrong price' : 'بلّغ عن سعر خاطئ'}
+                  </button>
+                </div>
+
+                <!-- Direct Store Link Button & Mandatory Affiliate Disclosure -->
+                <div class="space-y-1.5 pt-1">
+                  <button type="button" class="m-outbound-btn w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 px-4 rounded-xl text-xs shadow-sm transition flex items-center justify-center gap-2">
+                    <span>${isEn ? 'Go to Store Now' : 'الذهاب للمتجر الآن'}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                  </button>
+                  <div class="text-[10px] text-slate-500 font-medium text-center leading-snug">
+                    ${disclosureText}
+                  </div>
                 </div>
               </div>
             `;
 
+            const toggleBtn = mCard.querySelector('.m-offer-toggle');
+            const panel = mCard.querySelector('.m-offer-panel');
+            const chevron = mCard.querySelector('.m-offer-chevron');
+            toggleBtn.addEventListener('click', () => {
+              const willOpen = panel.classList.contains('hidden');
+              // Accordion: close every other open method first
+              mobileList.querySelectorAll('.m-offer-panel').forEach(p => p.classList.add('hidden'));
+              mobileList.querySelectorAll('.m-offer-chevron').forEach(c => c.style.transform = '');
+              mobileList.querySelectorAll('.m-offer-toggle').forEach(b => b.setAttribute('aria-expanded', 'false'));
+              if (willOpen) {
+                panel.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+                toggleBtn.setAttribute('aria-expanded', 'true');
+              }
+            });
             mCard.querySelector('.m-store-link').addEventListener('click', (e) => {
               e.stopPropagation();
               openStore(store.id);
