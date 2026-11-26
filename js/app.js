@@ -753,8 +753,8 @@
           const activeBundles = countryBundles.length ? countryBundles : BUNDLE_PERKS.filter(b => b.country === 'GL');
           const tags = [];
           activeBundles.forEach(b => {
-            if (b.telco && !b.telco.startsWith('أي ')) tags.push(`<span class="bg-emerald-950/70 border border-emerald-400/30 text-emerald-200 text-[11px] font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-tower-cell mx-1 text-emerald-400"></i>${trProviderText(b.telco)}</span>`);
-            if (b.bank && !b.bank.startsWith('أي ')) tags.push(`<span class="bg-teal-950/70 border border-teal-400/30 text-teal-200 text-[11px] font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-credit-card mx-1 text-amber-300"></i>${trProviderText(b.bank)}</span>`);
+            if (b.telco && !b.telco.startsWith('أي ')) tags.push(`<span class="bg-white border border-emerald-300 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-tower-cell mx-1 text-emerald-600"></i>${trProviderText(b.telco)}</span>`);
+            if (b.bank && !b.bank.startsWith('أي ')) tags.push(`<span class="bg-white border border-teal-300 text-teal-800 text-[11px] font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-credit-card mx-1 text-amber-500"></i>${trProviderText(b.bank)}</span>`);
           });
           perksTeaserProviders.innerHTML = tags.join('');
         }
@@ -797,32 +797,32 @@
         if (tileAi && chatOff && chatSafe) {
           const aiPct = Math.round(((chatOff.price - chatSafe.price) / chatOff.price) * 100);
           tileAi.innerHTML = `
-            <div class="absolute -right-12 -bottom-12 w-52 h-52 rounded-full bg-fuchsia-500/20 blur-2xl pointer-events-none"></div>
+            <div class="absolute -right-12 -bottom-12 w-52 h-52 rounded-full bg-teal-300/30 blur-2xl pointer-events-none"></div>
             <div class="space-y-3 z-10">
               <div class="flex items-center justify-between">
                 <span class="bg-emerald-400 text-slate-950 text-[11px] font-black px-3 py-1 rounded-full shadow">✓ ${isEn ? 'Cheapest Safe' : 'الأرخص الآمن'} (${tBadge(chatSafe.store.trustBadge)})</span>
-                <span class="text-xs font-bold text-violet-200 bg-white/10 px-2.5 py-1 rounded-full">${isEn ? 'AI Subscriptions Wing' : 'جناح الذكاء الاصطناعي'}</span>
+                <span class="text-xs font-bold text-teal-800 bg-white border border-teal-200 px-2.5 py-1 rounded-full">${isEn ? 'AI Subscriptions Wing' : 'جناح الذكاء الاصطناعي'}</span>
               </div>
               <h3 class="text-2xl sm:text-3xl font-black leading-snug">
                 ${isEn
                   ? `ChatGPT (OpenAI) for ${formatPrice(chatSafe.price)} instead of ${formatPrice(chatOff.price)}!`
                   : `ChatGPT (OpenAI) بـ ${formatPrice(chatSafe.price)} بدلاً من ${formatPrice(chatOff.price)}!`}
               </h3>
-              <p class="text-xs sm:text-sm text-violet-200 leading-relaxed">
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 ${isEn
                   ? `Cheapest safe route via <strong>${chatSafe.store.name}</strong> (${tOwnership(chatSafe.ownershipType)} • ${tContinuity(chatSafe.dataContinuity)}), or via pay-as-you-go gateways (OpenRouter & Poe).`
                   : `أرخص طريق آمن عبر <strong>${chatSafe.store.name}</strong> (${chatSafe.ownershipType} • ${chatSafe.dataContinuity})، أو عبر بوابات الدفع حسب الاستخدام (OpenRouter وPoe).`}
               </p>
             </div>
             <div class="pt-6 z-10 space-y-3">
-              <div class="bg-black/30 backdrop-blur rounded-2xl p-3.5 border border-white/10 flex flex-wrap items-center justify-between gap-2">
+              <div class="bg-white rounded-2xl p-3.5 border border-teal-100 shadow-sm flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span class="text-[11px] text-violet-300 block">${isEn ? 'Verified Cheapest Safe Today:' : 'الأرخص الآمن الموثق اليوم:'}</span>
-                  <span class="text-lg font-black text-emerald-400">${formatPrice(chatSafe.price)} <span class="text-xs font-normal text-white/70">${isEn ? `/ mo (Updated: ${chatSafe.lastUpdated})` : `/ شهرياً (آخر تحديث: ${chatSafe.lastUpdated})`}</span></span>
+                  <span class="text-[11px] text-slate-500 block">${isEn ? 'Verified Cheapest Safe Today:' : 'الأرخص الآمن الموثق اليوم:'}</span>
+                  <span class="text-lg font-black text-teal-700">${formatPrice(chatSafe.price)} <span class="text-xs font-normal text-slate-500">${isEn ? `/ mo (Updated: ${chatSafe.lastUpdated})` : `/ شهرياً (آخر تحديث: ${chatSafe.lastUpdated})`}</span></span>
                 </div>
-                <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-xl text-xs font-black">${isEn ? `Save ${aiPct}%` : `توفير ${aiPct}%`}</span>
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-xl text-xs font-black">${isEn ? `Save ${aiPct}%` : `توفير ${aiPct}%`}</span>
               </div>
-              <div class="inline-flex items-center gap-2 text-xs font-black text-amber-300">
+              <div class="inline-flex items-center gap-2 text-xs font-black text-teal-700">
                 <span>${isEn ? 'Explore Full AI Route Ladder' : 'استكشف سلم طرق الذكاء الاصطناعي الكامل'}</span>
                 <i class="fa-solid ${arrowIcon}"></i>
               </div>
@@ -835,15 +835,15 @@
           tileFree.innerHTML = `
             <div class="space-y-2 z-10">
               <div class="flex items-center justify-between">
-                <span class="bg-white text-rose-700 text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Badge:' : 'شارة:'} ${tBadge(freeOffer.store.trustBadge)}</span>
-                <i class="fa-solid fa-gift text-2xl text-white/80"></i>
+                <span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Badge:' : 'شارة:'} ${tBadge(freeOffer.store.trustBadge)}</span>
+                <i class="fa-solid fa-gift text-2xl text-rose-400"></i>
               </div>
               <h4 class="text-lg font-black leading-tight">${isEn ? `Free Giveaways & Software (${formatPrice(0)})` : `هدايا وبرامج مجانية (${formatPrice(0)})`}</h4>
-              <p class="text-xs text-rose-100">${isEn
+              <p class="text-xs text-slate-600">${isEn
                 ? `Weekly Epic Games freebies + legal Giveaway of the Day licenses on your personal account (${tContinuity(freeOffer.dataContinuity)}).`
                 : `ألعاب Epic Games الأسبوعية + تراخيص Giveaway of the Day القانونية بحسابك الشخصي (${freeOffer.dataContinuity}).`}</p>
             </div>
-            <div class="pt-4 z-10 flex items-center justify-between text-[11px] font-black border-t border-white/20 mt-3">
+            <div class="pt-4 z-10 flex items-center justify-between text-[11px] font-black border-t border-rose-200 mt-3">
               <span>${isEn ? `Updated: ${freeOffer.lastUpdated}` : `آخر تحديث: ${freeOffer.lastUpdated}`}</span>
               <span>${isEn ? 'View Details' : 'عرض التفاصيل'} <i class="fa-solid ${arrowIcon} mx-1"></i></span>
             </div>
@@ -855,13 +855,13 @@
           tilePerks.innerHTML = `
             <div class="space-y-2 z-10">
               <div class="flex items-center justify-between">
-                <span class="bg-emerald-950/60 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30">${countryCfg.flag} ${isEn ? `For ${cName}` : `مخصص لـ ${cName}`}</span>
-                <i class="fa-solid fa-gem text-2xl text-emerald-200"></i>
+                <span class="bg-white text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-200">${countryCfg.flag} ${isEn ? `For ${cName}` : `مخصص لـ ${cName}`}</span>
+                <i class="fa-solid fa-gem text-2xl text-emerald-500"></i>
               </div>
               <h4 class="text-lg font-black leading-tight">${isEn ? 'Already Included!' : 'قد يكون عندك أصلاً!'}</h4>
-              <p class="text-xs text-emerald-100 line-clamp-3">${cPerks}</p>
+              <p class="text-xs text-slate-600 line-clamp-3">${cPerks}</p>
             </div>
-            <div class="pt-4 z-10 flex items-center justify-between text-xs font-black border-t border-white/20 mt-3">
+            <div class="pt-4 z-10 flex items-center justify-between text-xs font-black border-t border-emerald-200 mt-3">
               <span>${isEn ? 'Check Your Telecom & Bank Perks' : 'افحص باقات اتصالاتك وبنكك'}</span>
               <i class="fa-solid fa-wand-magic-sparkles"></i>
             </div>
@@ -873,19 +873,19 @@
           tileGaming.innerHTML = `
             <div class="space-y-1.5">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Cheapest Safe for Games & Software' : 'الأرخص الآمن للألعاب والبرامج'}</span>
-                <span class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? 'Personal / Official Family Account' : 'حساب شخصي / عائلي رسمي'}</span>
+                <span class="bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-black px-2.5 py-0.5 rounded-full">${isEn ? 'Cheapest Safe for Games & Software' : 'الأرخص الآمن للألعاب والبرامج'}</span>
+                <span class="text-xs font-bold text-emerald-600"><i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? 'Personal / Official Family Account' : 'حساب شخصي / عائلي رسمي'}</span>
               </div>
               <h4 class="text-base sm:text-lg font-black">
                 ${isEn
                   ? `Xbox Game Pass at ${formatPrice(gpSafe.price)} (${gpSafe.store.name}) • Adobe CC at ${formatPrice(adobeSafe.price)} (${adobeSafe.store.name})`
                   : `Xbox Game Pass بـ ${formatPrice(gpSafe.price)} (${gpSafe.store.name}) • Adobe CC بـ ${formatPrice(adobeSafe.price)} (${adobeSafe.store.name})`}
               </h4>
-              <p class="text-xs text-slate-300">${isEn
+              <p class="text-xs text-slate-500">${isEn
                 ? `All prices are read directly from the unified route ladder in your selected currency (${state.currency}).`
                 : `جميع الأسعار تقرأ مباشرة من سلم الطرق الموحد بعملتك المختارة (${state.currency}).`}</p>
             </div>
-            <span class="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-4 py-2.5 rounded-xl text-xs shrink-0 transition">
+            <span class="bg-teal-600 hover:bg-teal-500 text-white font-black px-4 py-2.5 rounded-xl text-xs shrink-0 transition">
               ${isEn ? 'Compare Routes' : 'قارن الطرق'} <i class="fa-solid ${arrowIcon} mx-1"></i>
             </span>
           `;
@@ -1030,7 +1030,7 @@
                 ${renderCardBadgesHtml(bestSafeOffer, pName)}
               </div>
 
-              <button type="button" class="deal-open-btn mt-4 w-full bg-gradient-to-r from-slate-900 to-slate-800 hover:from-teal-600 hover:to-emerald-600 text-white font-black py-3 rounded-2xl text-xs shadow transition flex items-center justify-center gap-2">
+              <button type="button" class="deal-open-btn mt-4 w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black py-3 rounded-2xl text-xs shadow transition flex items-center justify-center gap-2">
                 <span>${isEn ? `Compare Full Route Ladder (${ladder.length} routes)` : `مقارنة سلم الطرق الكامل (${ladder.length} طرق)`}</span>
                 <i class="fa-solid ${arrowIcon}"></i>
               </button>
@@ -1169,7 +1169,7 @@
                 <!-- Mandatory Complete 5-Badge Bundle + Last Updated + Report Button -->
                 ${renderCardBadgesHtml(safeOffer, pName)}
               </div>
-              <button type="button" class="wing-open-prod-btn mt-4 w-full bg-slate-900 hover:bg-teal-600 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+              <button type="button" class="wing-open-prod-btn mt-4 w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
                 <span>${isEn ? `View All Routes (${ladder.length})` : `عرض جدول كل الطرق (${ladder.length})`}</span>
                 <i class="fa-solid ${arrowIcon}"></i>
               </button>
@@ -1577,19 +1577,19 @@
 
         CROSS_WING_LAYERS.forEach((layer, idx) => {
           const card = document.createElement('div');
-          card.className = 'bg-slate-800/90 border border-slate-700 rounded-xl p-4 flex flex-col justify-between space-y-3';
+          card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between space-y-3';
           const pillsHtml = layer.sites.map(sName =>
-            `<button type="button" class="cross-site-pill bg-slate-900 hover:bg-teal-500 hover:text-slate-950 text-teal-300 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-bold transition" data-site="${sName}">${sName}</button>`
+            `<button type="button" class="cross-site-pill bg-white hover:bg-teal-600 hover:text-white text-teal-700 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold transition" data-site="${sName}">${sName}</button>`
           ).join('');
           card.innerHTML = `
             <div class="space-y-1.5">
-              <div class="flex items-center gap-2 text-teal-400 font-black text-sm">
+              <div class="flex items-center gap-2 text-teal-700 font-black text-sm">
                 <i class="${layer.icon}"></i>
                 <span>${isEn ? (enTitles[idx] || layer.category) : layer.category}</span>
               </div>
-              <p class="text-[11px] text-slate-300 leading-relaxed">${isEn ? (enDescs[idx] || layer.desc) : layer.desc}</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">${isEn ? (enDescs[idx] || layer.desc) : layer.desc}</p>
             </div>
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-700/60">
+            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200">
               ${pillsHtml}
             </div>
           `;
@@ -1821,7 +1821,7 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="mt-4 w-full bg-slate-900 hover:bg-teal-600 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+            <button type="button" class="mt-4 w-full bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
               <span>${isEn ? `Step-by-Step Guide & Products (${offersCount})` : `دليل «كيف أشتري؟» خطوة بخطوة والمنتجات (${offersCount})`}</span>
               <i class="fa-solid ${arrowIcon}"></i>
             </button>
@@ -2005,13 +2005,13 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = isSelected
-              ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-indigo-600 shadow-md ring-2 ring-indigo-300 flex items-center gap-2 transition'
+              ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-teal-600 shadow-md ring-2 ring-teal-500 flex items-center gap-2 transition'
               : 'px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center gap-2 transition';
             btn.innerHTML = `
               <i class="${prod.icon} ${isSelected ? 'text-amber-300' : 'text-teal-600'}"></i>
               <span>${pName}</span>
               <span class="text-[10px] opacity-80">(${safeOffer ? formatPrice(safeOffer.price) : ''})</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-indigo-800 text-amber-300' : 'bg-white text-slate-500'} font-black">${isSelected ? (isEn ? '✓ Added' : '✓ مضاف') : (isEn ? '+ Add' : '+ أضف')}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-teal-800 text-amber-300' : 'bg-white text-slate-500'} font-black">${isSelected ? (isEn ? '✓ Added' : '✓ مضاف') : (isEn ? '+ Add' : '+ أضف')}</span>
             `;
             btn.addEventListener('click', () => {
               const existingIdx = state.calcItems.findIndex(item => item.productId === pid);
@@ -2060,7 +2060,7 @@
           tbody.innerHTML = `
             <tr>
               <td colspan="6" class="py-8 text-center text-slate-400">
-                <i class="fa-solid fa-hand-pointer text-indigo-400 text-lg mb-1.5 block"></i>
+                <i class="fa-solid fa-hand-pointer text-teal-500 text-lg mb-1.5 block"></i>
                 ${emptyCalcHtml}
               </td>
             </tr>
@@ -2068,7 +2068,7 @@
           if (calcMobileList) {
             calcMobileList.innerHTML = `
               <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
-                <i class="fa-solid fa-hand-pointer text-indigo-400 text-lg mb-1.5 block"></i>
+                <i class="fa-solid fa-hand-pointer text-teal-500 text-lg mb-1.5 block"></i>
                 ${emptyCalcHtml}
               </div>
             `;
