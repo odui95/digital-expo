@@ -773,12 +773,6 @@
       }
 
       function showView(viewId) {
-        if (viewId === 'calculator') {
-          showView('home');
-          const calcSec = document.getElementById('unified-calculator-section');
-          if (calcSec) calcSec.scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
         document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
         const target = document.getElementById(`view-${viewId}`);
         if (target) {
@@ -2097,205 +2091,112 @@
       }
 
       // ----------------------------------------------------
-      // 11. Unified Single Calculator (Items 2, 3, 8, 12, 14)
-      // - Starts with ZERO pre-selected subscriptions!
-      // - Calculates strictly using «الأرخص الآمن» (getProductCheapestSafeOffer)
-      // - Displays mandatory disclosure: «حساب تقديري بناءً على أرخص الطرق الآمنة»
+      // 11. Simple Subscriptions Calculator («حاسبة اشتراكاتي»)
+      // - Items persist as { productId, currentPrice } in the same state key/shape as before
+      // - currentPrice auto-fills from the product's official offer when added; editable per row
+      // - Totals: monthly = sum of currentPrice; yearly = monthly x 12
       // ----------------------------------------------------
-      const QUICK_CALC_IDS = ['p_chatgpt', 'p_netflix', 'p_spotify', 'p_adobe', 'p_gamepass', 'p_ytpremium', 'p_claude', 'p_shahid'];
+      function calcMonthlyTotal() {
+        return state.calcItems.reduce((sum, item) => sum + (parseFloat(item.currentPrice) || 0), 0);
+      }
+
+      function calcMonthlySaving() {
+        let saving = 0;
+        state.calcItems.forEach(item => {
+          const safeOffer = getProductCheapestSafeOffer(item.productId);
+          if (safeOffer) saving += Math.max(0, (parseFloat(item.currentPrice) || 0) - safeOffer.price);
+        });
+        return saving;
+      }
+
+      function updateCalcTotals() {
+        const isEn = state.lang === 'en';
+        const monthly = calcMonthlyTotal();
+        const monthlyEl = document.getElementById('calc-total-monthly');
+        if (monthlyEl) monthlyEl.textContent = formatPrice(monthly);
+        const yearlyEl = document.getElementById('calc-total-yearly');
+        if (yearlyEl) yearlyEl.textContent = formatPrice(monthly * 12);
+        const savingLine = document.getElementById('calc-saving-line');
+        if (savingLine) {
+          const saving = calcMonthlySaving();
+          if (state.calcItems.length > 0 && saving > 0) {
+            savingLine.textContent = isEn
+              ? `You could save ${formatPrice(saving)} / month via the Cheapest Safe routes`
+              : `يمكنك توفير ${formatPrice(saving)} شهرياً عبر «الأرخص الآمن»`;
+            savingLine.classList.remove('hidden');
+          } else {
+            savingLine.classList.add('hidden');
+          }
+        }
+        const emptyNote = document.getElementById('calc-empty-note');
+        if (emptyNote) emptyNote.classList.toggle('hidden', state.calcItems.length > 0);
+        // Homepage slim row: the saved monthly total rides on the row when items exist
+        const homeTotal = document.getElementById('home-calc-total');
+        if (homeTotal) {
+          if (state.calcItems.length > 0) {
+            homeTotal.textContent = isEn ? `${formatPrice(monthly)} / mo` : `${formatPrice(monthly)} شهرياً`;
+            homeTotal.classList.remove('hidden');
+          } else {
+            homeTotal.classList.add('hidden');
+          }
+        }
+        const homeArrow = document.getElementById('home-calc-arrow');
+        if (homeArrow) homeArrow.className = `fa-solid ${isEn ? 'fa-arrow-right' : 'fa-arrow-left'} text-teal-500 shrink-0`;
+      }
 
       function renderCalculator() {
         const isEn = state.lang === 'en';
-        const pillsContainer = document.getElementById('hero-interactive-pills');
-        const tbody = document.getElementById('calc-items-tbody');
         const select = document.getElementById('calc-add-product-select');
 
-        // 1. Render Quick Toggle Pills (synced with state.calcItems)
-        if (pillsContainer) {
-          pillsContainer.innerHTML = '';
-          QUICK_CALC_IDS.forEach(pid => {
-            const prod = state.products.find(p => p.id === pid);
-            if (!prod) return;
-            const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
-            const isSelected = state.calcItems.some(item => item.productId === pid);
-            const offOffer = getProductOfficialOffer(pid);
-            const safeOffer = getProductCheapestSafeOffer(pid);
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = isSelected
-              ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-teal-600 shadow-md ring-2 ring-teal-500 flex items-center gap-2 transition'
-              : 'px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center gap-2 transition';
-            btn.innerHTML = `
-              <i class="${prod.icon} ${isSelected ? 'text-amber-300' : 'text-teal-600'}"></i>
-              <span>${pName}</span>
-              <span class="text-[10px] opacity-80">(${safeOffer ? formatPrice(safeOffer.price) : ''})</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-teal-800 text-amber-300' : 'bg-white text-slate-500'} font-black">${isSelected ? (isEn ? '✓ Added' : '✓ مضاف') : (isEn ? '+ Add' : '+ أضف')}</span>
-            `;
-            btn.addEventListener('click', () => {
-              const existingIdx = state.calcItems.findIndex(item => item.productId === pid);
-              if (existingIdx >= 0) {
-                state.calcItems.splice(existingIdx, 1);
-              } else {
-                state.calcItems.push({
-                  productId: pid,
-                  currentPrice: offOffer ? offOffer.price : 15
-                });
-              }
-              saveState();
-              renderCalculator();
-            });
-            pillsContainer.appendChild(btn);
-          });
-        }
-
-        // 2. Populate Full Product Dropdown
+        // Populate the product picker (the official offer price is the auto-fill source)
         if (select) {
           const currentVal = select.value;
           select.innerHTML = '';
           state.products.forEach(p => {
             const pName = isEn ? (p.nameEn || p.name) : p.name;
             const offOffer = getProductOfficialOffer(p.id);
-            const safeOffer = getProductCheapestSafeOffer(p.id);
             const opt = document.createElement('option');
             opt.value = p.id;
-            opt.textContent = isEn
-              ? `${pName} — Official: ${offOffer ? formatPrice(offOffer.price) : ''} | Cheapest Safe: ${safeOffer ? formatPrice(safeOffer.price) : ''}`
-              : `${pName} — الرسمي: ${offOffer ? formatPrice(offOffer.price) : ''} | الأرخص الآمن: ${safeOffer ? formatPrice(safeOffer.price) : ''}`;
+            opt.textContent = offOffer ? `${pName} — ${formatPrice(offOffer.price)}` : pName;
             select.appendChild(opt);
           });
           if (currentVal) select.value = currentVal;
         }
 
-        const calcMobileList = document.getElementById('calc-items-mobile-list');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-        if (calcMobileList) calcMobileList.innerHTML = '';
-
-        if (state.calcItems.length === 0) {
-          const emptyCalcHtml = isEn
-            ? 'No subscriptions selected yet. Tap the subscriptions you use above to calculate your estimated savings based on "Cheapest Safe" routes.'
-            : 'لم تختر أي اشتراكات بعد. اضغط على الاشتراكات التي تستخدمها بالأعلى لبدء حساب توفيرك التقديري بناءً على «الأرخص الآمن».';
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="py-8 text-center text-slate-400">
-                <i class="fa-solid fa-hand-pointer text-teal-500 text-lg mb-1.5 block"></i>
-                ${emptyCalcHtml}
-              </td>
-            </tr>
-          `;
-          if (calcMobileList) {
-            calcMobileList.innerHTML = `
-              <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
-                <i class="fa-solid fa-hand-pointer text-teal-500 text-lg mb-1.5 block"></i>
-                ${emptyCalcHtml}
-              </div>
+        // The list: name, editable monthly price, remove — nothing else per row
+        const list = document.getElementById('calc-simple-list');
+        if (list) {
+          list.innerHTML = '';
+          state.calcItems.forEach((item, idx) => {
+            const prod = state.products.find(p => p.id === item.productId);
+            if (!prod) return;
+            const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 py-3';
+            row.innerHTML = `
+              <button type="button" class="calc-row-name font-bold text-slate-900 hover:text-teal-600 text-sm flex-1 truncate text-right rtl:text-right ltr:text-left">${pName}</button>
+              <input type="number" min="0" step="0.01" value="${item.currentPrice}" class="calc-row-price w-24 text-sm font-bold text-slate-800 border border-slate-200 rounded-lg px-2 py-1.5 text-center focus:outline-none focus:border-teal-500" aria-label="${isEn ? 'Monthly price' : 'السعر الشهري'}" />
+              <button type="button" class="calc-row-remove text-rose-500 hover:text-rose-700 px-1.5 py-1 shrink-0" aria-label="${isEn ? 'Remove' : 'حذف'}"><i class="fa-solid fa-trash-can"></i></button>
             `;
-          }
-          document.getElementById('calc-total-current-annual').textContent = formatPrice(0);
-          document.getElementById('calc-total-optimized-annual').textContent = formatPrice(0);
-          document.getElementById('calc-total-savings-annual').textContent = formatPrice(0);
-          document.getElementById('calc-savings-percent').textContent = isEn
-            ? 'Estimated calculation based on cheapest safe routes'
-            : 'حساب تقديري بناءً على أرخص الطرق الآمنة';
-          return;
-        }
-
-        let totalCurrentAnnual = 0;
-        let totalOptimizedAnnual = 0;
-
-        state.calcItems.forEach((item, idx) => {
-          const prod = state.products.find(p => p.id === item.productId);
-          if (!prod) return;
-          const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
-
-          const officialOffer = getProductOfficialOffer(prod.id);
-          const safeOffer = getProductCheapestSafeOffer(prod.id);
-          if (!officialOffer || !safeOffer) return;
-
-          const officialMonthly = officialOffer.price;
-          const safeMonthly = safeOffer.price;
-
-          const monthlySaving = Math.max(0, officialMonthly - safeMonthly);
-          const annualSaving = monthlySaving * 12;
-
-          totalCurrentAnnual += officialMonthly * 12;
-          totalOptimizedAnnual += safeMonthly * 12;
-
-          const tr = document.createElement('tr');
-          tr.className = 'hover:bg-slate-50 transition';
-          tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">
-              <button type="button" class="hover:text-teal-600 calc-prod-link">${pName}</button>
-            </td>
-            <td class="py-3 px-3 text-rose-600 font-semibold">${formatPrice(officialMonthly)}</td>
-            <td class="py-3 px-3 font-black text-teal-700">${formatPrice(safeMonthly)}</td>
-            <td class="py-3 px-3 text-[11px] text-slate-600">
-              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${getTrustBadgeClass(safeOffer.store.trustBadge)}">${tBadge(safeOffer.store.trustBadge)}</span>
-              <strong class="mx-1">${safeOffer.store.name}</strong>
-              <span class="text-slate-400">(${tOwnership(safeOffer.ownershipType)})</span>
-            </td>
-            <td class="py-3 px-3 font-black text-emerald-600">${formatPrice(annualSaving)}</td>
-            <td class="py-3 px-4 text-center">
-              <button type="button" class="text-rose-500 hover:text-rose-700 calc-remove-btn" data-index="${idx}">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </td>
-          `;
-          tr.querySelector('.calc-prod-link').addEventListener('click', () => openProduct(prod.id));
-          tr.querySelector('.calc-remove-btn').addEventListener('click', () => {
-            state.calcItems.splice(idx, 1);
-            saveState();
-            renderCalculator();
-          });
-          tbody.appendChild(tr);
-
-          if (calcMobileList) {
-            const mItem = document.createElement('div');
-            mItem.className = 'bg-slate-50 rounded-2xl p-3.5 border border-slate-200 space-y-2 text-xs';
-            mItem.innerHTML = `
-              <div class="flex items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
-                <button type="button" class="m-calc-prod font-black text-slate-900 hover:text-teal-600 text-sm text-right rtl:text-right ltr:text-left">${pName}</button>
-                <button type="button" class="m-calc-del text-rose-500 hover:text-rose-700 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div class="bg-white p-2 rounded-xl border border-slate-200/80">
-                  <span class="text-[10px] text-slate-400 block">${isEn ? 'Official (Monthly):' : 'الرسمي (شهرياً):'}</span>
-                  <span class="font-bold text-rose-600">${formatPrice(officialMonthly)}</span>
-                </div>
-                <div class="bg-white p-2 rounded-xl border border-teal-200">
-                  <span class="text-[10px] text-teal-700 block">${isEn ? 'Cheapest Safe (Mo):' : 'الأرخص الآمن (شهرياً):'}</span>
-                  <span class="font-black text-teal-700">${formatPrice(safeMonthly)}</span>
-                </div>
-              </div>
-              <div class="flex flex-wrap items-center justify-between gap-1 text-[11px] pt-1">
-                <div>
-                  <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${getTrustBadgeClass(safeOffer.store.trustBadge)}">${tBadge(safeOffer.store.trustBadge)}</span>
-                  <strong class="mx-1 text-slate-800">${safeOffer.store.name}</strong>
-                  <span class="text-slate-500">(${tOwnership(safeOffer.ownershipType)})</span>
-                </div>
-                <div class="font-black text-emerald-600">${isEn ? 'Annual Save:' : 'توفيرك السنوي:'} ${formatPrice(annualSaving)}</div>
-              </div>
-            `;
-            mItem.querySelector('.m-calc-prod').addEventListener('click', () => openProduct(prod.id));
-            mItem.querySelector('.m-calc-del').addEventListener('click', () => {
+            row.querySelector('.calc-row-name').addEventListener('click', () => openProduct(prod.id));
+            const priceInput = row.querySelector('.calc-row-price');
+            priceInput.addEventListener('change', () => {
+              const val = parseFloat(priceInput.value);
+              item.currentPrice = isNaN(val) || val < 0 ? 0 : val;
+              priceInput.value = item.currentPrice;
+              saveState();
+              updateCalcTotals();
+            });
+            row.querySelector('.calc-row-remove').addEventListener('click', () => {
               state.calcItems.splice(idx, 1);
               saveState();
               renderCalculator();
             });
-            calcMobileList.appendChild(mItem);
-          }
-        });
+            list.appendChild(row);
+          });
+        }
 
-        const netSavings = Math.max(0, totalCurrentAnnual - totalOptimizedAnnual);
-        const percent = totalCurrentAnnual > 0 ? Math.round((netSavings / totalCurrentAnnual) * 100) : 0;
-
-        document.getElementById('calc-total-current-annual').textContent = formatPrice(totalCurrentAnnual);
-        document.getElementById('calc-total-optimized-annual').textContent = formatPrice(totalOptimizedAnnual);
-        document.getElementById('calc-total-savings-annual').textContent = formatPrice(netSavings);
-        document.getElementById('calc-savings-percent').textContent = isEn
-          ? `Estimated ${percent}% savings (based on cheapest safe routes)`
-          : `توفير تقديري ${percent}% (بناءً على أرخص الطرق الآمنة)`;
+        updateCalcTotals();
       }
 
       // ----------------------------------------------------
@@ -2837,43 +2738,21 @@
           if (bH2) bH2.textContent = dict.bento_title;
         }
 
-        // Unified Calculator static labels
-        const calcClearBtn = document.getElementById('calc-clear-all-btn');
-        if (calcClearBtn) {
-          calcClearBtn.textContent = dict.calc_clear_btn;
-          if (calcClearBtn.previousElementSibling) calcClearBtn.previousElementSibling.textContent = dict.calc_step1_label;
-        }
-        const calcAddSelect = document.getElementById('calc-add-product-select');
-        if (calcAddSelect && calcAddSelect.previousElementSibling) {
-          calcAddSelect.previousElementSibling.textContent = dict.calc_step2_label;
-        }
+        // Simple Calculator static labels
         const calcAddBtn = document.getElementById('calc-add-btn');
         if (calcAddBtn) calcAddBtn.innerHTML = dict.calc_add_btn;
-
-        const calcSection = document.getElementById('unified-calculator-section');
-        if (calcSection) {
-          const ths = calcSection.querySelectorAll('thead th');
-          if (ths.length === 6) {
-            ths[0].textContent = dict.calc_th_sub;
-            ths[1].textContent = dict.calc_th_off;
-            ths[2].textContent = dict.calc_th_safe;
-            ths[3].textContent = dict.calc_th_source;
-            ths[4].textContent = dict.calc_th_save;
-            ths[5].textContent = dict.calc_th_del;
-          }
-          const c1 = document.getElementById('calc-total-current-annual');
-          if (c1 && c1.previousElementSibling) c1.previousElementSibling.textContent = dict.calc_card1_title;
-          const c1Sub = document.getElementById('hook-official-total');
-          if (c1Sub) c1Sub.textContent = dict.calc_card1_sub;
-          const c2 = document.getElementById('calc-total-optimized-annual');
-          if (c2 && c2.previousElementSibling) c2.previousElementSibling.textContent = dict.calc_card2_title;
-          const c2Sub = document.getElementById('hook-expo-total');
-          if (c2Sub) c2Sub.textContent = dict.calc_card2_sub;
-          const c3 = document.getElementById('calc-total-savings-annual');
-          if (c3 && c3.previousElementSibling) c3.previousElementSibling.textContent = dict.calc_card3_title;
-          const footerP = calcSection.querySelector('p.text-center');
-          if (footerP) footerP.innerHTML = dict.calc_footer_note;
-        }
+        const calcViewTitle = document.getElementById('calc-view-title');
+        if (calcViewTitle) calcViewTitle.textContent = isEn ? 'My Subscriptions Calculator' : 'حاسبة اشتراكاتي';
+        const calcCrumbTitle = document.getElementById('calc-crumb-title');
+        if (calcCrumbTitle) calcCrumbTitle.textContent = isEn ? 'My Subscriptions Calculator' : 'حاسبة اشتراكاتي';
+        const calcMonthlyLabel = document.getElementById('calc-total-monthly-label');
+        if (calcMonthlyLabel) calcMonthlyLabel.textContent = isEn ? 'Monthly total' : 'المجموع الشهري';
+        const calcYearlyLabel = document.getElementById('calc-total-yearly-label');
+        if (calcYearlyLabel) calcYearlyLabel.textContent = isEn ? 'Yearly:' : 'سنوياً:';
+        const calcEmptyNote = document.getElementById('calc-empty-note');
+        if (calcEmptyNote) calcEmptyNote.textContent = isEn ? 'No subscriptions yet — add your first one above.' : 'لا اشتراكات بعد — أضف أول اشتراك من الأعلى.';
+        const homeCalcLabel = document.getElementById('home-calc-label');
+        if (homeCalcLabel) homeCalcLabel.textContent = isEn ? 'My Subscriptions Calculator' : 'حاسبة اشتراكاتي';
 
         // Breadcrumbs & Wing/Store/Product static controls
         document.querySelectorAll('.nav-to-home-crumb').forEach(b => {
@@ -3087,6 +2966,8 @@
           showView('perks');
         });
         document.getElementById('cta-open-calc').addEventListener('click', () => showView('calculator'));
+        const homeCalcRow = document.getElementById('home-calc-row');
+        if (homeCalcRow) homeCalcRow.addEventListener('click', () => showView('calculator'));
 
         document.querySelectorAll('.nav-to-home-crumb').forEach(b => {
           b.addEventListener('click', () => showView('home'));
@@ -3211,7 +3092,7 @@
             state.calcItems.push({ productId: pid, currentPrice: offOffer ? offOffer.price : 15 });
             saveState();
             renderCalculator();
-            showToast(state.lang === 'en' ? `Added ${prod.nameEn || prod.name} to the calculator` : `تمت إضافة ${prod.name} إلى الحاسبة الموحدة`);
+            showToast(state.lang === 'en' ? `Added ${prod.nameEn || prod.name} to the calculator` : `تمت إضافة ${prod.name} إلى الحاسبة`);
           } else {
             showToast(state.lang === 'en' ? `${prod.nameEn || prod.name} is already in your calculator` : `${prod.name} مضاف بالفعل في الحاسبة`);
           }
