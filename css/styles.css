@@ -914,3 +914,13 @@ tbody tr:hover { background: rgba(13, 148, 136, 0.045); }
 .product-tile .tile-hint { font-size: 0.68rem; font-weight: 800; color: #0d9488; margin-top: auto; white-space: nowrap; }
 .search-tiles-grid .product-tile { min-height: 7.1rem; padding: 0.7rem 0.35rem 0.6rem; }
 .search-tiles-grid .product-tile .tile-logo { width: 3rem; height: 3rem; border-radius: 0.85rem; font-size: 1.25rem; }
+
+/* ==========================================================================
+   بلاطات خريطة مواقع الجناح — نفس أسلوب بلاطات المنتجات (شعار + اسم)
+   Wing sources map tiles: logo + name, uniform grid under slim headers
+   ========================================================================== */
+.source-tiles-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+@media (min-width: 1024px) { .source-tiles-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.source-tiles-grid .product-tile { min-height: 6.9rem; padding: 0.7rem 0.35rem 0.6rem; }
+.source-tiles-grid .product-tile .tile-logo { width: 3rem; height: 3rem; border-radius: 0.85rem; font-size: 1.25rem; }
+.wing-grey-chevron { transition: transform 0.3s; }

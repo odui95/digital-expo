@@ -1724,6 +1724,18 @@
         });
       }
 
+      // Logo for a wing source entry: resolve the name exactly like openSiteByName
+      // does (product first, then store) so the tile shows the logo of the entity
+      // the tap will actually open. Falls back to a generic globe icon.
+      function resolveSourceLogoHtml(itemName) {
+        const clean = itemName.toLowerCase().trim();
+        const prod = state.products.find(p => p.name.toLowerCase() === clean || p.name.toLowerCase().includes(clean) || clean.includes(p.name.toLowerCase()));
+        if (prod) return brandLogoHtml(prod.officialUrl, prod.icon);
+        const store = state.stores.find(s => s.name.toLowerCase() === clean || s.name.toLowerCase().includes(clean) || clean.includes(s.name.toLowerCase()));
+        if (store) return brandLogoHtml(store.url, 'fa-solid fa-store');
+        return '<i class="fa-solid fa-globe"></i>';
+      }
+
       function renderWingSourcesMap(wing) {
         const container = document.getElementById('wing-sources-categories');
         if (!container) return;
@@ -1751,26 +1763,67 @@
 
         const groups = wing.sourceGroups || [];
         groups.forEach(g => {
+          const isGrey = g.badge === 'رمادي';
+          const label = isEn ? (groupLabelEnMap[g.label] || g.label) : g.label;
+
           const box = document.createElement('div');
-          box.className = 'bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2';
-          const pills = g.items.map(itemName =>
-            `<button type="button" class="wing-source-pill bg-white hover:bg-teal-600 hover:text-white text-slate-800 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1" data-site="${itemName}">
-              <span>${itemName}</span>
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-60"></i>
-            </button>`
-          ).join('');
-          box.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-slate-800">${isEn ? (groupLabelEnMap[g.label] || g.label) : g.label}</span>
+          box.className = isGrey
+            ? 'bg-amber-50/60 rounded-xl p-3.5 border border-amber-200 space-y-2'
+            : 'bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2';
+
+          // Slim category header (grey groups: caution accordion header, collapsed by default)
+          const header = document.createElement(isGrey ? 'button' : 'div');
+          if (isGrey) {
+            header.type = 'button';
+            header.className = 'w-full flex items-center justify-between gap-2 text-start';
+            header.setAttribute('aria-expanded', 'false');
+            header.innerHTML = `
+              <span class="text-xs font-extrabold text-amber-800 flex items-center gap-1.5 min-w-0">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 shrink-0"></i>
+                <span class="truncate">⚠ ${label} — ${isEn ? 'proceed with caution' : 'تعامل بحذر'} (${g.items.length})</span>
+              </span>
+              <span class="flex items-center gap-1.5 shrink-0">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${getTrustBadgeClass(g.badge)}">${tBadge(g.badge)}</span>
+                <i class="fa-solid fa-chevron-down wing-grey-chevron text-amber-600 text-[10px]"></i>
+              </span>
+            `;
+          } else {
+            header.className = 'flex items-center justify-between';
+            header.innerHTML = `
+              <span class="text-xs font-extrabold text-slate-800">${label}</span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${getTrustBadgeClass(g.badge)}">${tBadge(g.badge)}</span>
-            </div>
-            <div class="flex flex-wrap gap-1.5 pt-1">
-              ${pills}
-            </div>
-          `;
-          box.querySelectorAll('.wing-source-pill').forEach(btn => {
-            btn.addEventListener('click', () => openSiteByName(btn.getAttribute('data-site')));
+            `;
+          }
+          box.appendChild(header);
+
+          // Logo tiles grid — same tile style as the homepage product tiles;
+          // tap triggers exactly the same details behavior as the old chips.
+          const tilesGrid = document.createElement('div');
+          tilesGrid.className = 'product-tiles-grid source-tiles-grid' + (isGrey ? ' hidden' : '');
+          g.items.forEach(itemName => {
+            const tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'wing-source-tile product-tile bg-white hover:bg-teal-50 border border-slate-200 rounded-2xl cursor-pointer transition shadow-sm';
+            tile.setAttribute('aria-label', itemName);
+            tile.innerHTML = `
+              <span class="tile-logo bg-teal-50 text-teal-700">${resolveSourceLogoHtml(itemName)}</span>
+              <span class="tile-name">${itemName}</span>
+            `;
+            tile.addEventListener('click', () => openSiteByName(itemName));
+            tilesGrid.appendChild(tile);
           });
+          box.appendChild(tilesGrid);
+
+          if (isGrey) {
+            const chevron = header.querySelector('.wing-grey-chevron');
+            header.addEventListener('click', () => {
+              const willOpen = tilesGrid.classList.contains('hidden');
+              tilesGrid.classList.toggle('hidden', !willOpen);
+              header.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+              if (chevron) chevron.style.transform = willOpen ? 'rotate(180deg)' : '';
+            });
+          }
+
           container.appendChild(box);
         });
       }
