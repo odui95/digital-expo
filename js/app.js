@@ -1022,98 +1022,139 @@
         });
       }
 
-      // Item 2, 3, 5, 6, 7: Today’s Highlighted Deals shows ONLY "الأرخص الآمن" with the FULL 5-badge bundle + lastUpdated + Report button!
+      // صفقات اليوم: صف أفقي واحد متحرك — سحب بالإصبع + حركة تلقائية من اليمين لليسار (حلقة لا نهائية)
+      function buildDealMiniCard(prod, officialOffer, bestSafeOffer, discountPct, isEn) {
+        const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
+        const theme = WING_VISUAL_THEMES[prod.wing] || WING_VISUAL_THEMES.ai;
+        const card = document.createElement('div');
+        card.className = 'deal-mini-card';
+        card.innerHTML = `
+          <div class="h-1.5 w-full bg-gradient-to-r ${theme.gradient}"></div>
+          <div class="deal-mini-body">
+            <div class="deal-mini-top">
+              <div class="deal-mini-logo ${theme.iconBg}">
+                ${brandLogoHtml(prod.officialUrl, prod.icon)}
+              </div>
+              <div class="deal-mini-name">
+                <h4>${pName}</h4>
+                <span>${prod.company}</span>
+              </div>
+              <span class="deal-mini-save"><i class="fa-solid fa-shield-halved"></i> ${isEn ? `Save ${discountPct}%` : `وفّر ${discountPct}%`}</span>
+            </div>
+            <div class="deal-mini-prices">
+              <del>${formatPrice(officialOffer.price)}</del>
+              <span class="deal-mini-safe">${formatPrice(bestSafeOffer.price)} <small>${isEn ? '/ mo' : '/ شهرياً'}</small></span>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => openProduct(prod.id));
+        return card;
+      }
+
       function renderTodayDeals() {
-        const carousel = document.getElementById('deals-carousel');
-        if (!carousel) return;
-        carousel.innerHTML = '';
-
+        const track = document.getElementById('deals-track');
+        if (!track) return;
+        track.innerHTML = '';
         const isEn = state.lang === 'en';
-        const arrowIcon = isEn ? 'fa-arrow-right' : 'fa-arrow-left';
-
         const dealProductIds = ['p_chatgpt', 'p_spotify', 'p_adobe', 'p_netflix', 'p_gamepass', 'p_ytpremium'];
+        const deals = [];
         dealProductIds.forEach(pid => {
           const prod = state.products.find(p => p.id === pid);
           if (!prod) return;
-          const pName = isEn ? (prod.nameEn || prod.name) : prod.name;
-
-          const ladder = getProductOffersLadder(pid);
           const officialOffer = getProductOfficialOffer(pid);
           const bestSafeOffer = getProductCheapestSafeOffer(pid);
           if (!officialOffer || !bestSafeOffer) return;
-
-          const theme = WING_VISUAL_THEMES[prod.wing] || WING_VISUAL_THEMES.ai;
           const discountPct = officialOffer.price > 0
             ? Math.round(((officialOffer.price - bestSafeOffer.price) / officialOffer.price) * 100)
             : 0;
-          const barPct = officialOffer.price > 0
-            ? Math.max(14, Math.min(90, Math.round((bestSafeOffer.price / officialOffer.price) * 100)))
-            : 30;
-
-          const card = document.createElement('div');
-          card.className = 'attraction-card bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between';
-          card.innerHTML = `
-            <div class="h-2 w-full bg-gradient-to-r ${theme.gradient}"></div>
-            <div class="p-5 space-y-4 flex-1 flex flex-col justify-between">
-              <div class="space-y-3">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black bg-emerald-600 text-white px-3 py-0.5 rounded-full shadow-sm">
-                    <i class="fa-solid fa-shield-halved mx-1"></i>${isEn ? `Cheapest Safe (Save ${discountPct}%)` : `الأرخص الآمن (وفر ${discountPct}%)`}
-                  </span>
-                  <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${getTrustBadgeClass(bestSafeOffer.store.trustBadge)}">
-                    ${tBadge(bestSafeOffer.store.trustBadge)}
-                  </span>
-                </div>
-                <div class="flex items-center gap-3 cursor-pointer deal-title-trigger">
-                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl shrink-0 overflow-hidden">
-                    ${brandLogoHtml(prod.officialUrl, prod.icon)}
-                  </div>
-                  <div>
-                    <h4 class="font-black text-slate-900 hover:text-teal-600 transition text-base">${pName}</h4>
-                    <span class="text-[11px] text-slate-500">${prod.company}</span>
-                  </div>
-                </div>
-
-                <!-- Price Comparison Meter (Single Unified Source of Truth) -->
-                <div class="bg-teal-50/50 p-3.5 rounded-2xl border border-teal-200/80 text-xs space-y-2">
-                  <div class="flex justify-between text-slate-500 text-[11px]">
-                    <span>${isEn ? 'Regional Official Price:' : 'السعر الرسمي الإقليمي:'}</span>
-                    <del class="text-rose-500 font-bold">${formatPrice(officialOffer.price)}</del>
-                  </div>
-                  <div class="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-rose-400 h-full w-full rounded-full"></div>
-                  </div>
-                  <div class="flex justify-between items-baseline pt-1">
-                    <span class="font-extrabold text-slate-800">${isEn ? '"Cheapest Safe" Price:' : 'سعر «الأرخص الآمن»:'}</span>
-                    <span class="text-base font-black text-emerald-700">${formatPrice(bestSafeOffer.price)} <span class="text-[10px] font-normal text-slate-500">${isEn ? '/ mo' : '/ شهرياً'}</span></span>
-                  </div>
-                  <div class="w-full bg-emerald-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full" style="width: ${barPct}%"></div>
-                  </div>
-                </div>
-
-                <!-- Mandatory Complete 5-Badge Bundle + Last Updated + Report Button (Items 5, 6, 7) -->
-                ${renderCardBadgesHtml(bestSafeOffer, pName)}
-              </div>
-
-              <button type="button" class="deal-open-btn mt-4 w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black py-3 rounded-2xl text-xs shadow transition flex items-center justify-center gap-2">
-                <span>${isEn ? `Compare Full Route Ladder (${ladder.length} routes)` : `مقارنة سلم الطرق الكامل (${ladder.length} طرق)`}</span>
-                <i class="fa-solid ${arrowIcon}"></i>
-              </button>
-            </div>
-          `;
-
-          card.querySelector('.deal-title-trigger').addEventListener('click', () => openProduct(prod.id));
-          card.querySelector('.deal-open-btn').addEventListener('click', () => openProduct(prod.id));
-          const reportBtn = card.querySelector('.card-report-price-btn');
-          if (reportBtn) {
-            reportBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              openReportModal(reportBtn.getAttribute('data-prod'), reportBtn.getAttribute('data-store'));
-            });
-          }
-          carousel.appendChild(card);
+          deals.push({ prod, officialOffer, bestSafeOffer, discountPct });
         });
+        // مجموعتان متطابقتان من البطاقات = حلقة سلسة لا تنفد
+        for (let set = 0; set < 2; set++) {
+          deals.forEach(d => track.appendChild(buildDealMiniCard(d.prod, d.officialOffer, d.bestSafeOffer, d.discountPct, isEn)));
+        }
+        initDealsMarquee();
+      }
+
+      // ===== محرك شريط الصفقات: حركة تلقائية (يمين ← يسار) + سحب، إيقاف عند اللمس واستئناف تلقائي =====
+      const dealsMarquee = { raf: 0, offset: 0, period: 0, dragging: false, pausedUntil: 0, lastTs: 0, wired: false, suppressClick: false };
+
+      function dealsMarqueeWrap(o) {
+        const P = dealsMarquee.period;
+        if (!P) return 0;
+        o = o % P;
+        if (o > 0) o -= P;
+        return o;
+      }
+      function dealsMarqueeApply() {
+        const track = document.getElementById('deals-track');
+        if (track) track.style.transform = `translateX(${dealsMarquee.offset}px)`;
+      }
+      function dealsMarqueeMeasure() {
+        const track = document.getElementById('deals-track');
+        if (!track) return;
+        const n = track.children.length;
+        if (n >= 2) {
+          dealsMarquee.period = Math.abs(track.children[n / 2].offsetLeft - track.children[0].offsetLeft);
+        }
+      }
+      function dealsMarqueeStep(ts) {
+        const m = dealsMarquee;
+        if (!m.lastTs) m.lastTs = ts;
+        const dt = Math.min(80, ts - m.lastTs);
+        m.lastTs = ts;
+        if (!m.dragging && performance.now() >= m.pausedUntil && m.period > 0) {
+          m.offset = dealsMarqueeWrap(m.offset - dt * 0.04); // ≈ 40px بالثانية باتجاه اليسار
+          dealsMarqueeApply();
+        }
+        m.raf = requestAnimationFrame(dealsMarqueeStep);
+      }
+      function initDealsMarquee() {
+        const viewport = document.getElementById('deals-carousel');
+        if (!viewport) return;
+        const m = dealsMarquee;
+        if (m.raf) cancelAnimationFrame(m.raf);
+        m.raf = 0; m.offset = 0; m.lastTs = 0; m.dragging = false; m.pausedUntil = 0;
+        dealsMarqueeApply();
+        dealsMarqueeMeasure();
+        if (!m.wired) {
+          m.wired = true;
+          let drag = null;
+          viewport.addEventListener('pointerdown', (e) => {
+            drag = { x: e.clientX, start: m.offset, moved: 0 };
+            m.dragging = true;
+          });
+          window.addEventListener('pointermove', (e) => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x;
+            drag.moved = Math.max(drag.moved, Math.abs(dx));
+            m.offset = dealsMarqueeWrap(drag.start + dx);
+            dealsMarqueeApply();
+          });
+          const endDrag = () => {
+            if (!drag) return;
+            if (drag.moved > 8) { // السحب لا يفتح المنتج — الكبسة النظيفة فقط
+              m.suppressClick = true;
+              setTimeout(() => { m.suppressClick = false; }, 350); // أمان: لا تعلق الراية إن انتهى السحب خارج الشريط
+            }
+            drag = null;
+            m.dragging = false;
+            m.pausedUntil = performance.now() + 2500; // استئناف تلقائي بعد 2.5 ثانية
+          };
+          window.addEventListener('pointerup', endDrag);
+          window.addEventListener('pointercancel', endDrag);
+          viewport.addEventListener('click', (e) => {
+            if (m.suppressClick) { e.stopPropagation(); e.preventDefault(); m.suppressClick = false; }
+          }, true);
+          viewport.addEventListener('dragstart', (e) => e.preventDefault());
+          let rzT = 0;
+          window.addEventListener('resize', () => {
+            clearTimeout(rzT);
+            rzT = setTimeout(() => { dealsMarqueeMeasure(); m.offset = dealsMarqueeWrap(m.offset); dealsMarqueeApply(); }, 150);
+          });
+        }
+        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduceMotion && m.period > 0) m.raf = requestAnimationFrame(dealsMarqueeStep);
       }
 
       function openWing(wingId) {

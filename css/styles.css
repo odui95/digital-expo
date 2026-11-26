@@ -924,3 +924,24 @@ tbody tr:hover { background: rgba(13, 148, 136, 0.045); }
 .source-tiles-grid .product-tile { min-height: 6.9rem; padding: 0.7rem 0.35rem 0.6rem; }
 .source-tiles-grid .product-tile .tile-logo { width: 3rem; height: 3rem; border-radius: 0.85rem; font-size: 1.25rem; }
 .wing-grey-chevron { transition: transform 0.3s; }
+
+/* ==========================================================================
+   صفقات اليوم — صف أفقي واحد متحرك تلقائياً (يمين ← يسار) + سحب بالإصبع
+   Today's Deals marquee: one horizontal auto-scrolling swipeable row
+   ========================================================================== */
+.deals-marquee-viewport { overflow: hidden; direction: rtl; touch-action: pan-y; cursor: grab; padding: 0.3rem 0.1rem 0.7rem; }
+.deals-marquee-viewport:active { cursor: grabbing; }
+.deals-marquee-track { display: flex; gap: 0.9rem; width: max-content; will-change: transform; user-select: none; -webkit-user-select: none; }
+.deal-mini-card { flex: 0 0 auto; width: min(58vw, 250px); background: #fff; border: 1px solid #e2e8f0; border-radius: 1.25rem; overflow: hidden; box-shadow: 0 1px 3px rgb(15 23 42 / 0.06); cursor: pointer; }
+.deal-mini-body { padding: 0.85rem 0.9rem 0.95rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.deal-mini-top { display: flex; align-items: center; gap: 0.6rem; }
+.deal-mini-logo { width: 2.75rem; height: 2.75rem; border-radius: 0.9rem; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden; flex-shrink: 0; padding: 0.35rem; box-sizing: border-box; }
+.deal-mini-name { flex: 1; min-width: 0; }
+.deal-mini-name h4 { font-size: 0.85rem; font-weight: 900; color: #0f172a; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deal-mini-name span { font-size: 0.65rem; color: #64748b; }
+.deal-mini-save { background: #059669; color: #fff; font-size: 0.62rem; font-weight: 900; padding: 0.22rem 0.55rem; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 2px rgb(5 150 105 / 0.35); }
+.deal-mini-prices { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 0.9rem; padding: 0.55rem 0.7rem; }
+.deal-mini-prices del { color: #f43f5e; font-weight: 700; font-size: 0.8rem; white-space: nowrap; }
+.deal-mini-safe { color: #047857; font-weight: 900; font-size: 1.05rem; white-space: nowrap; }
+.deal-mini-safe small { font-size: 0.6rem; color: #64748b; font-weight: 400; }
+@media (prefers-reduced-motion: reduce) { .deals-marquee-track { will-change: auto; } }
