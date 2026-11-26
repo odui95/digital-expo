@@ -889,3 +889,10 @@ tbody tr:hover { background: rgba(13, 148, 136, 0.045); }
 .from-teal-700 { --gf:#0f766e;--gt:color-mix(in srgb, #0f766e 0%, transparent) }
 .to-white { --gt:#ffffff }
 .to-emerald-600 { --gt:#059669 }
+
+/* ===== Top-5 customer-eye improvements (2026-11) ===== */
+/* Real brand logos: image overlays the fallback icon; onerror removes it */
+.brand-logo-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.brand-logo-wrap > img.brand-logo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 22%; padding: 2px; box-sizing: border-box; }
+/* Search autocomplete keyboard highlight */
+.search-ac-item.search-ac-active { background: #f0fdfa !important; box-shadow: inset 0 0 0 2px #14b8a6; }

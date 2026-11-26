@@ -552,6 +552,136 @@
         return safeList.length ? safeList[0] : null;
       }
 
+      // ----------------------------------------------------
+      // Top-5 customer-eye improvements: real brand logos, Hero Deal of the Day,
+      // and honest local price alerts (checked on every visit — no backend exists)
+      // ----------------------------------------------------
+      function getDomainFromUrl(url) {
+        try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
+      }
+
+      // Real brand logo via Google's favicon service for the entity's own domain.
+      // The generic icon stays underneath; if the logo fails to load it removes itself.
+      function brandLogoHtml(url, fallbackIcon) {
+        const domain = getDomainFromUrl(url);
+        if (!domain) return `<i class="${fallbackIcon}"></i>`;
+        return `<span class="brand-logo-wrap"><i class="${fallbackIcon}"></i><img class="brand-logo-img" src="https://www.google.com/s2/favicons?domain=${domain}&sz=128" alt="" loading="lazy" onerror="this.remove()"></span>`;
+      }
+
+      // Strongest documented saving in the site's own data: highest % discount of
+      // Cheapest Safe vs Official among real paid routes (safe price > 0).
+      function getHeroDeal() {
+        let best = null;
+        state.products.forEach(prod => {
+          const official = getProductOfficialOffer(prod.id);
+          const safe = getProductCheapestSafeOffer(prod.id);
+          if (!official || !safe || official.price <= 0 || safe.price <= 0) return;
+          const pct = ((official.price - safe.price) / official.price) * 100;
+          const saved = official.price - safe.price;
+          if (!best || pct > best.pct + 0.001 || (Math.abs(pct - best.pct) <= 0.001 && saved > best.saved)) {
+            best = { prod, official, safe, pct, saved };
+          }
+        });
+        return best;
+      }
+
+      function renderHeroDeal() {
+        const box = document.getElementById('hero-deal-spotlight');
+        if (!box) return;
+        const isEn = state.lang === 'en';
+        const deal = getHeroDeal();
+        if (!deal) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+        const pName = isEn ? (deal.prod.nameEn || deal.prod.name) : deal.prod.name;
+        const updated = deal.safe.lastUpdated || deal.official.lastUpdated || '';
+        box.classList.remove('hidden');
+        box.innerHTML = `
+          <div class="bg-white border-2 border-teal-500/60 rounded-3xl shadow-xl p-5 sm:p-6 relative overflow-hidden">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="bg-teal-600 text-white text-[11px] font-black px-3 py-1 rounded-full"><i class="fa-solid fa-bolt mx-1"></i>${isEn ? 'Deal of the Day' : 'صفقة اليوم'}</span>
+              <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-black px-3 py-1 rounded-full">${isEn ? `Save ${Math.round(deal.pct)}%` : `وفّر ${Math.round(deal.pct)}%`}</span>
+              ${updated ? `<span class="text-[11px] text-slate-500 font-bold"><i class="fa-regular fa-clock mx-1"></i>${isEn ? 'Price data last updated:' : 'آخر تحديث لبيانات الأسعار:'} <strong>${updated}</strong></span>` : ''}
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                ${brandLogoHtml(deal.prod.officialUrl, deal.prod.icon)}
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-black text-slate-900 text-lg sm:text-xl truncate">${pName}</h3>
+                <div class="text-xs text-slate-500">${deal.prod.company} • ${isEn ? 'via' : 'عبر'} ${deal.safe.store.name} (${tBadge(deal.safe.store.trustBadge)})</div>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-end gap-x-8 gap-y-3 mt-4">
+              <div>
+                <span class="text-[11px] text-slate-500 block font-bold">${isEn ? 'Official Price:' : 'السعر الرسمي:'}</span>
+                <del class="text-rose-500 font-black text-lg">${formatPrice(deal.official.price)}</del>
+              </div>
+              <div>
+                <span class="text-[11px] text-slate-500 block font-bold">${isEn ? 'Cheapest Safe:' : 'الأرخص الآمن:'}</span>
+                <span class="text-teal-700 font-black text-2xl">${formatPrice(deal.safe.price)}</span>
+              </div>
+              <button type="button" class="hero-deal-open bg-teal-600 hover:bg-teal-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow transition">
+                ${isEn ? 'Compare All Routes' : 'قارن كل الطرق'}
+              </button>
+            </div>
+          </div>
+        `;
+        box.querySelector('.hero-deal-open').addEventListener('click', () => openProduct(deal.prod.id));
+      }
+
+      // Price alerts live in this browser only (localStorage via saveState).
+      // An alert is "reached" when the current Cheapest Safe price (USD) is at or
+      // below the target price the visitor entered in USD (per the modal label).
+      function getReachedPriceAlerts() {
+        return state.priceAlerts
+          .map(a => {
+            const safe = a.productId ? getProductCheapestSafeOffer(a.productId) : null;
+            const current = safe ? safe.price : null;
+            const reached = current !== null && Number(a.targetPrice) > 0 && current <= Number(a.targetPrice);
+            return { alert: a, current, reached };
+          })
+          .filter(x => x.reached);
+      }
+
+      function renderAlertsBanner() {
+        const banner = document.getElementById('price-alerts-banner');
+        if (!banner) return;
+        const isEn = state.lang === 'en';
+        const reached = getReachedPriceAlerts();
+        if (!reached.length) { banner.classList.add('hidden'); banner.innerHTML = ''; return; }
+        banner.classList.remove('hidden');
+        banner.innerHTML = `
+          <div class="bg-teal-600 text-white rounded-3xl p-5 shadow-lg space-y-3">
+            <div class="font-black text-sm flex items-center gap-2"><i class="fa-solid fa-bell"></i>${isEn ? 'Your price alerts hit their target!' : 'تنبيهات الأسعار وصلت لهدفها!'}</div>
+            <p class="text-[11px] text-teal-50 leading-relaxed">${isEn ? 'Checked automatically on this visit against the current Cheapest Safe prices. Alerts are stored in this browser only.' : 'تم الفحص تلقائياً عند زيارتك هاي مقابل أسعار «الأرخص الآمن» الحالية — التنبيهات محفوظة في هاد المتصفح فقط.'}</p>
+            <div class="space-y-2">
+              ${reached.map(x => `
+                <div class="bg-white text-slate-900 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                  <div class="text-xs"><span class="font-black">${x.alert.productName}</span> — ${isEn ? 'now' : 'صار'} <strong class="text-teal-700">${formatPrice(x.current)}</strong> <span class="text-slate-500">(${isEn ? 'your target' : 'هدفك'} ${formatPrice(x.alert.targetPrice)})</span></div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="alert-banner-view bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-black px-3 py-1.5 rounded-lg" data-pid="${x.alert.productId}">${isEn ? 'View Product' : 'عرض المنتج'}</button>
+                    <button type="button" class="alert-banner-del text-rose-600 hover:text-rose-700 text-[11px] font-black px-2 py-1.5" data-pid="${x.alert.productId}" data-target="${x.alert.targetPrice}">${isEn ? 'Delete Alert' : 'حذف التنبيه'}</button>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        `;
+        banner.querySelectorAll('.alert-banner-view').forEach(btn => {
+          btn.addEventListener('click', () => openProduct(btn.getAttribute('data-pid')));
+        });
+        banner.querySelectorAll('.alert-banner-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-pid');
+            const tgt = Number(btn.getAttribute('data-target'));
+            const idx = state.priceAlerts.findIndex(a => a.productId === pid && Number(a.targetPrice) === tgt);
+            if (idx >= 0) state.priceAlerts.splice(idx, 1);
+            saveState();
+            updateSavedBadge();
+            renderAlertsBanner();
+            showToast(isEn ? 'Price alert removed' : 'تم حذف تنبيه السعر');
+          });
+        });
+      }
+
       function getWingCheapestSafeInfo(wingId) {
         const prodsInWing = state.products.filter(p => p.wing === wingId);
         let bestOffer = null;
@@ -999,8 +1129,8 @@
                   </span>
                 </div>
                 <div class="flex items-center gap-3 cursor-pointer deal-title-trigger">
-                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl shrink-0">
-                    <i class="${prod.icon}"></i>
+                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                    ${brandLogoHtml(prod.officialUrl, prod.icon)}
                   </div>
                   <div>
                     <h4 class="font-black text-slate-900 hover:text-teal-600 transition text-base">${pName}</h4>
@@ -1140,8 +1270,8 @@
             <div class="p-5 space-y-3 flex-1 flex flex-col justify-between">
               <div class="space-y-3">
                 <div class="flex items-start justify-between gap-2">
-                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="${prod.icon}"></i>
+                  <div class="w-12 h-12 rounded-2xl ${theme.iconBg} flex items-center justify-center text-xl flex-shrink-0 overflow-hidden">
+                    ${brandLogoHtml(prod.officialUrl, prod.icon)}
                   </div>
                   <div class="flex flex-col items-end gap-1">
                     ${savePct > 0 ? `<span class="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">${isEn ? `Cheapest Safe (-${savePct}%)` : `الأرخص الآمن (-${savePct}%)`}</span>` : ''}
@@ -1218,7 +1348,7 @@
         if (repBtnEl) {
           repBtnEl.innerHTML = `<i class="fa-solid fa-flag text-[10px]"></i> ${isEn ? 'Report wrong price' : 'بلّغ عن سعر خاطئ'}`;
         }
-        document.getElementById('product-icon-box').innerHTML = `<i class="${prod.icon}"></i>`;
+        document.getElementById('product-icon-box').innerHTML = brandLogoHtml(prod.officialUrl, prod.icon);
 
         const perkAlertBox = document.getElementById('product-perk-alert-box');
         const perkTitle = document.getElementById('product-perk-title');
@@ -1266,6 +1396,16 @@
         if (sortSafeBtn) sortSafeBtn.innerHTML = `<i class="fa-solid fa-shield-halved mx-1"></i> ${isEn ? `Cheapest Safe (${safeLadder.length})` : `الأرخص الآمن (${safeLadder.length})`}`;
         if (sortAllBtn) sortAllBtn.innerHTML = `<i class="fa-solid fa-coins mx-1"></i> ${isEn ? `Cheapest (${fullLadder.length})` : `الأرخص (${fullLadder.length})`}`;
 
+        const stampEl = document.getElementById('product-updated-stamp');
+        if (stampEl) {
+          const ladderDates = fullLadder.map(o => o.lastUpdated).filter(Boolean).sort();
+          const latestDate = ladderDates.length ? ladderDates[ladderDates.length - 1] : '';
+          stampEl.textContent = latestDate
+            ? (isEn ? `Price data last updated: ${latestDate}` : `آخر تحديث لبيانات الأسعار: ${latestDate}`)
+            : '';
+          stampEl.classList.toggle('hidden', !latestDate);
+        }
+
         renderProductOffersTable();
         showView('product');
       }
@@ -1281,6 +1421,8 @@
         const prod = state.products.find(p => p.id === state.activeProductId) || { name: 'المنتج', nameEn: 'Product' };
         const displayProdName = isEn ? (prod.nameEn || prod.name) : prod.name;
         let offers = getProductOffersLadder(state.activeProductId);
+        const cheapestSafeOffer = getProductCheapestSafeOffer(state.activeProductId);
+        const cheapestSafeId = cheapestSafeOffer ? cheapestSafeOffer.id : null;
 
         if (state.sortMode === 'safe') {
           offers = offers.filter(o => o.isSafe);
@@ -1311,7 +1453,8 @@
 
           // 1. Desktop Row (7 Columns)
           const tr = document.createElement('tr');
-          tr.className = `hover:bg-slate-50 transition ${idx === 0 ? 'bg-teal-50/40' : ''}`;
+          const isCheapestSafeRow = offer.id === cheapestSafeId;
+          tr.className = `hover:bg-slate-50 transition ${isCheapestSafeRow ? 'bg-teal-50 ring-1 ring-inset ring-teal-400' : (idx === 0 ? 'bg-teal-50/40' : '')}`;
 
           tr.innerHTML = `
             <td class="py-4 px-4">
@@ -1321,6 +1464,7 @@
                   <button type="button" class="font-extrabold text-slate-900 hover:text-teal-600 text-xs store-link-btn" data-store-id="${store.id}">
                     ${store.name}
                   </button>
+                  ${isCheapestSafeRow ? `<span class="inline-block bg-teal-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">${isEn ? '★ Cheapest Safe' : '★ الأرخص الآمن'}</span>` : ''}
                   <div class="text-[11px] text-slate-500">${tStoreType(store.type)}</div>
                   <div class="text-[10px] text-slate-400 flex items-center gap-2 pt-0.5">
                     <span><i class="fa-regular fa-clock mx-0.5"></i>${isEn ? 'Updated:' : 'آخر تحديث:'} <strong>${offer.lastUpdated}</strong></span>
@@ -1380,7 +1524,7 @@
           if (mobileList) {
             const mCard = document.createElement('div');
             mCard.className = `rounded-2xl border p-4 space-y-3 shadow-sm ${
-              idx === 0 ? 'bg-teal-50/50 border-teal-300 ring-1 ring-teal-500/20' : 'bg-white border-slate-200'
+              isCheapestSafeRow ? 'bg-teal-50 border-teal-400 ring-1 ring-teal-500/40' : (idx === 0 ? 'bg-teal-50/50 border-teal-300 ring-1 ring-teal-500/20' : 'bg-white border-slate-200')
             }`;
             mCard.innerHTML = `
               <!-- Field 1 & 2: Method/Source + Store Trust Badge -->
@@ -1388,6 +1532,7 @@
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     ${idx === 0 ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${isEn ? '#1 Cheapest' : '#1 الأرخص'}</span>` : `<span class="text-[10px] font-bold text-slate-400">#${idx + 1}</span>`}
+                    ${isCheapestSafeRow ? `<span class="bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">★ ${isEn ? 'Cheapest Safe' : 'الأرخص الآمن'}</span>` : ''}
                     <button type="button" class="m-store-link font-black text-sm text-slate-900 hover:text-teal-600 underline decoration-dotted">
                       ${store.name}
                     </button>
@@ -2222,7 +2367,7 @@
             div.className = 'py-3 flex items-center justify-between gap-2';
             div.innerHTML = `
               <div class="flex items-center gap-2 min-w-0">
-                <i class="${prod.icon} text-teal-600"></i>
+                <span class="w-6 h-6 inline-flex shrink-0">${brandLogoHtml(prod.officialUrl, prod.icon + ' text-teal-600')}</span>
                 <span class="font-bold text-slate-800 truncate">${pName}</span>
                 <span class="text-teal-700 font-bold shrink-0">${safeOffer ? formatPrice(safeOffer.price) : ''}</span>
               </div>
@@ -2248,10 +2393,13 @@
             const div = document.createElement('div');
             div.className = 'py-3 flex items-center justify-between gap-2';
             const emailLabel = a.email === 'تنبيه محلي داخل المتصفح' && isEn ? 'Local Browser Alert' : a.email;
+            const safeNow = a.productId ? getProductCheapestSafeOffer(a.productId) : null;
+            const reachedNow = safeNow && Number(a.targetPrice) > 0 && safeNow.price <= Number(a.targetPrice);
             div.innerHTML = `
               <div class="min-w-0">
                 <span class="font-bold text-slate-800">${a.productName}</span>
                 <span class="text-slate-500"> — ${isEn ? 'Target Price:' : 'السعر المستهدف:'} <strong>${formatPrice(a.targetPrice)}</strong> (${emailLabel})</span>
+                ${reachedNow ? `<span class="inline-block bg-teal-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full mx-1">${isEn ? 'Target reached ✓ now' : 'وصل للهدف ✓ الآن'} ${formatPrice(safeNow.price)}</span>` : ''}
               </div>
               <button type="button" class="text-rose-500 hover:text-rose-700 delete-alert-btn shrink-0"><i class="fa-solid fa-trash-can"></i></button>
             `;
@@ -2349,11 +2497,11 @@
             const offOffer = getProductOfficialOffer(p.id);
             const minPrice = safeOffer ? safeOffer.price : 0;
             const row = document.createElement('div');
-            row.className = 'p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between transition';
+            row.className = 'search-ac-item p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between transition';
             row.innerHTML = `
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm">
-                  <i class="${p.icon}"></i>
+                <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm overflow-hidden">
+                  ${brandLogoHtml(p.officialUrl, p.icon)}
                 </div>
                 <div>
                   <div class="font-extrabold text-sm text-slate-900">${p.name}</div>
@@ -2382,11 +2530,11 @@
             if (!s) return;
             const minStoreP = getStoreCheapestSafePrice(s.id);
             const row = document.createElement('div');
-            row.className = 'p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition bg-slate-50/40';
+            row.className = 'search-ac-item p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition bg-slate-50/40';
             row.innerHTML = `
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-black">
-                  <i class="fa-solid fa-book"></i>
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-black overflow-hidden">
+                  ${brandLogoHtml(s.url, 'fa-solid fa-book')}
                 </div>
                 <div>
                   <div class="font-extrabold text-sm text-slate-900">${state.lang === 'en' ? `${s.name} Store Guide` : `دليل متجر ${s.name}`}</div>
@@ -2458,11 +2606,11 @@
               const offOffer = getProductOfficialOffer(p.id);
               const minPrice = safeOffer ? safeOffer.price : 0;
               const row = document.createElement('div');
-              row.className = 'p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between gap-2 transition';
+              row.className = 'search-ac-item p-3 hover:bg-teal-50 cursor-pointer flex items-center justify-between gap-2 transition';
               row.innerHTML = `
                 <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm shrink-0">
-                    <i class="${p.icon}"></i>
+                  <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                    ${brandLogoHtml(p.officialUrl, p.icon)}
                   </div>
                   <div class="min-w-0">
                     <div class="font-extrabold text-sm text-slate-900 truncate">${pName}</div>
@@ -2493,11 +2641,11 @@
               const isEn = state.lang === 'en';
               const minStoreP = getStoreCheapestSafePrice(s.id);
               const row = document.createElement('div');
-              row.className = 'p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-2 transition bg-slate-50/40';
+              row.className = 'search-ac-item p-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-2 transition bg-slate-50/40';
               row.innerHTML = `
                 <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-black shrink-0">
-                    <i class="fa-solid fa-store"></i>
+                  <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-black shrink-0 overflow-hidden">
+                    ${brandLogoHtml(s.url, 'fa-solid fa-store')}
                   </div>
                   <div class="min-w-0">
                     <div class="font-extrabold text-sm text-slate-900 truncate">${s.name} <span class="text-[10px] font-normal text-teal-700">${isEn ? '(How to Buy Guide)' : '(دليل كيف أشتري)'}</span></div>
@@ -2536,6 +2684,50 @@
         });
 
         input.addEventListener('input', runSearchQuery);
+
+        // Autocomplete keyboard navigation: ArrowUp/ArrowDown move, Enter opens, Escape closes
+        let acActiveIndex = -1;
+        function acRows() { return Array.from(dropdown.querySelectorAll('.search-ac-item')); }
+        function acSetActive(idx) {
+          const rows = acRows();
+          rows.forEach(r => r.classList.remove('search-ac-active'));
+          acActiveIndex = idx;
+          if (idx >= 0 && rows[idx]) {
+            rows[idx].classList.add('search-ac-active');
+            rows[idx].scrollIntoView({ block: 'nearest' });
+          }
+          input.setAttribute('aria-expanded', 'true');
+        }
+        input.addEventListener('input', () => { acActiveIndex = -1; });
+        dropdown.addEventListener('mousemove', (e) => {
+          const row = e.target.closest('.search-ac-item');
+          if (!row) return;
+          const rows = acRows();
+          const idx = rows.indexOf(row);
+          if (idx >= 0 && idx !== acActiveIndex) acSetActive(idx);
+        });
+        input.addEventListener('keydown', (e) => {
+          if (dropdown.classList.contains('hidden')) return;
+          const rows = acRows();
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (rows.length) acSetActive((acActiveIndex + 1) % rows.length);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (rows.length) acSetActive((acActiveIndex - 1 + rows.length) % rows.length);
+          } else if (e.key === 'Enter') {
+            if (acActiveIndex >= 0 && rows[acActiveIndex]) {
+              e.preventDefault();
+              const target = rows[acActiveIndex];
+              acActiveIndex = -1;
+              target.click();
+            }
+          } else if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+            acActiveIndex = -1;
+            input.setAttribute('aria-expanded', 'false');
+          }
+        });
 
         clearBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -2787,6 +2979,8 @@
         renderWings();
         renderCrossWingTools();
         renderTodayDeals();
+        renderHeroDeal();
+        renderAlertsBanner();
         renderCalculator();
         if (state.currentView === 'wing' && state.activeWingId) {
           openWing(state.activeWingId);
@@ -3095,7 +3289,8 @@
         document.getElementById('modal-alert-submit').addEventListener('click', () => {
           const prodName = document.getElementById('alert-product-name').value;
           const target = parseFloat(document.getElementById('alert-target-price').value) || 0;
-          const rawEmail = document.getElementById('alert-email').value.trim();
+          const emailEl = document.getElementById('alert-email');
+          const rawEmail = emailEl ? emailEl.value.trim() : '';
           const email = rawEmail || 'تنبيه محلي داخل المتصفح';
 
           state.priceAlerts.push({
@@ -3107,6 +3302,7 @@
           });
           saveState();
           updateSavedBadge();
+          renderAlertsBanner();
           document.getElementById('modal-alert').classList.add('hidden');
           if (state.currentView === 'product' && state.activeProductId) {
             openProduct(state.activeProductId);
